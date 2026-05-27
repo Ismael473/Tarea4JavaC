@@ -1,0 +1,253 @@
+
+------------------------------------------------------------------
+Idees
+	Observations
+		moving right
+			2, 2, 2, 2, 2, 2, 2, 2, reversed
+			Moved 16 pixels
+		moving left
+			When they reached the left, they were 18 pixels to the left of the starting position.
+				So they moved back those 16 pixels and then 18 -> 34
+				I'll define this position as 0.
+		From sprite_measurements
+			Aliens are separated horizontally by 16 pixels
+		Conclusion
+			So the starting position of the leftmost alien is 18.
+			An for the rightmost alien it is 18 + 16*10 = 178
+			If moving right
+				They turn after the rightmost Alien (GetRightmostAlien(0)) of any row reaches 194 (or 198?) or more.
+			If moving left
+				They turn after the leftmost  Alien (GetLeftmostAlien(0))  of any row reaches 0 (or 198?) or less.
+			THEY DESCEND 8 pixels
+	Game loop
+		AdvanceFrame()	// Method to execute a frame with the given controller input.	
+			Alien movement
+				Variables
+					An array of Alien objects aliens
+					An int current_moving_alien -> [0, 54] (There are 55 Aliens at the start of a game)
+					A Boolean representing the direction, [false, true] -> [right, left]
+					A Boolean representing the descending movement state, [false, true] -> [not descending, descending]
+				Only one Alien moves in a frame.
+				A dead alien will still exist in the aliens array, but it is no longer updated nor shown.
+					The rest of the aliens stay at their original memory position in the array
+					An alien has a Boolean dead flag.
+				
+				// Decend state start and stop.
+					if current_moving_alien == 0
+						if descending	// This is true when they are donde descending for now.
+							descending = false
+						else
+							descending = true
+							direction = !direction
+
+				// Move an Alien
+				For choosing the moving Alien, alien_to_move = GetNextAlien(current_moving_alien)
+				Call Alien.Move(direction) on alien_to_move.
+				if descending
+					Call Alien.Decend() on alien_to_move.
+				If no valid alien was found (i. e. GetNextAlien(current_moving_alien) == null),
+					current_moving_alien = 0
+					play a sound?
+					Call AdvanceFrame() 
+
+			Player movement
+				Variables
+					Singleton singleton receives the inputs
+					// Bullet player_bullet // THE Player CONTAINS ITS OWN BULLET.
+					Player player
+
+				if singleton.left_is_pressed
+					player.Move(1)
+				if singleton.right_is_pressed
+					player.Move(0)
+				if singleton.shoot_is_pressed && player.player_bullet = null
+					player_bullet = player.SpawnBullet()
+
+			Bullet movement
+				Variables
+					A list of all Bullet objects bullets
+				
+				for each bullet in bullets
+					bullet.Move()
+					collsion logic???
+
+		After AdvanceFrame(),
+			remove dead bullets.
+			create the Json for the graphics and use a List current_killed_entities for the entities killed that frame.
+			dead entities are ignored
+
+
+	Class Alien
+	Class Player
+	Class Bullet
+		Attributes
+			move_distance = 4 // 3 for the player's
+			move_cooldown = 2 // inactive frames after moving // 0 for the player's
+			// speed = move_distance / (move_cooldown + 1) [pixels/f]
+			// alien bullet speed  = 4/3 pixels/f = 1,33 pixels/f
+			// player bullet speed = 3/1 pixels/f = 3 pixels/f
+			sprite = ???
+			sprite_offset = 0
+			x = ???
+			y = ???
+
+				
+	Methods
+		Alien GetNextAlien(alien_counter)
+			// It doesn't receive the aliens array because the Class of this method has aliens as an attribute.
+			If alien_counter > 54, return null
+			This method returns the Alien at alien_counter
+			If this fails, it calls GetNextAlien(alien_counter + 1)
+
+		Int FirstAlien(aliens)
+			Returns the first not dead Alien in aliens
+
+		// Requires at least one Alien to exist.
+		// offset must start at 0.
+		Alien GetRightmostAlien(offset)
+			if !aliens[10-offset].dead
+				return aliens[10-offset]
+			if !aliens[21-offset].dead
+				return aliens[21-offset]
+			if !aliens[32-offset].dead
+				return aliens[32-offset]
+			if !aliens[43-offset].dead
+				return aliens[43-offset]
+			if !aliens[54-offset].dead
+				return aliens[54-offset]
+			return GetRightmostAlien(offset+1)
+
+		// Similar to GetRightmostAlien()
+		Alien GetLeftmostAlien(offset)
+			if !aliens[0+offset].dead
+				return aliens[0+offset]
+			if !aliens[11+offset].dead
+				return aliens[11+offset]
+			if !aliens[22+offset].dead
+				return aliens[22+offset]
+			if !aliens[33+offset].dead
+				return aliens[33+offset]
+			if !aliens[44+offset].dead
+				return aliens[44+offset]
+			return GetRightmostAlien(offset+1)
+		
+
+------------------------------------------------------------------
+To do
+	Add collsion logic
+	Add alien fire logic
+		In each frame, for each alien, a small chance of shooting, depending on the horizontal distance to the player, is used
+		to decide to shoot.
+
+	Bullets
+		There are three bullet types
+		ascending horizontal perpendicular line detail
+		lightning bolt
+		two diagonal lines detail
+
+		Treat each as having 4 sprites, though the two diagonal lines detail actually has only 3.
+
+		Bullet collisions are wonky.
+			I think alien bullets usually beat player bullets?
+
+		Alien bullets are 1x7
+		Player bullets are 1x4
+
+		Aliens have a bullet attribute.
+		They have a ShootChance(int player_x) method
+			This method returns null or a bullet.
+			Shoots randomly and only if the last bullet wasn't dead.
+		SpaCEInvaders has a method EmitShots()
+			This method calls ShootChance() in every bottom alien.
+				Aliens that are the lowest in their columns.
+			This method saves all the new Bullet objects in the bullets list.
+		When a bullet must be destroyed, it is set as dead and removed from bullets.
+			This means that whenever the original alien shoots again the Bullet is orphaned and thus garbage collected.
+				This can even happen in the next round.
+		
+
+
+------------------------------------------------------------------
+Dessign requirements
+	Idees
+		Inheritance is used for the Aliens
+			The Alien class is inherited by Squid, Crab, and Octopus
+				They change the points_awarded stat
+
+		Use Abstract Factory for the Bullets.
+			it'll be used for the aliens.
+		Use Observer for collisions?
+
+	Abstract Factory
+		It is used for the aliens
+		Classes involved
+			abstract class AbstractFactory (AbstractFactory)
+			AlienFactory (ConcreteFactory)
+			Squid
+			Crab
+			Octopus
+			Alien (like an Enemy class)
+		Implementation
+			AlienFactory inherits from AbstractFactory
+			Squid, Crab, and Octopus inherit from Alien
+			Alien inherits from Entity
+
+
+
+
+------------------------------------------------------------------
+Assignments
+
+Ok, a como yo lo veo el proyecto tiene seis partes:
+	1. Lógica de juego (Java)
+	2. Interfaz gráfica para clientes jugadores y observadores (C)
+	3. Control (C, Raspberry, maqueta)
+	4. Comunicación cliente servidor (Java y C)
+	5. Modo de ingresar comandos a Java (Java)
+		(Esto es lo que el profe usaría en la defensa para añadir ovnis y aumentar la velocidad del juego en tiempo de ejecución).
+	6. Documentación
+
+afinidades
+	1: 5, 2, 4, 3
+	2: 1, 5, 4, 3
+	3: 2, 1, 5, 4
+	4: 1, 5, 2, 3,
+	5: 1, 2, 4, 3
+	6: ???
+
+Codependencia:
+	1,2,5,4,3,6
+
+
+Reordenar por codependencia, que es más o menos como el orden en que sería bueno que salieran las partes de la tarea:
+Ok, a como yo lo veo el proyecto tiene seis partes:
+	1. Lógica de juego (Java)
+	2. Interfaz gráfica para clientes jugadores y observadores (C)
+	3. Modo de ingresar comandos a Java (Java)
+		(Esto es lo que el profe usaría en la defensa para añadir ovnis y aumentar la velocidad del juego en tiempo de ejecución).
+	4. Comunicación cliente servidor (Java y C)
+	5. Control (C, Raspberry, maqueta)
+	6. Documentación
+
+
+
+------------------------------------------------------------------
+Notas de clase durante la lectura de las especificaciones de la tarea
+el servidor java le envia toda la estructura de datos al clinte c
+Creo que son solo dos clientes, uno espectador y uno jugador.
+	no se va a abrir un jugador 2 ni su espectador.
+
+Los mensajes de annadir aliens y escudo y asi no pasan por el cliente de c en ningun momento
+van del teclado al juego en java y listo.
+
+
+patrones
+el adapter esta en la comunicacion cliente servidor
+el observer esta en que los clientes son subscriptores del server
+	el server dice algo y entonces todos los clientes lo ven y solo si les corresponde usarlo, lo usan.
+abstract factory
+	hay 3 clases calamar, pulpo y cangrejo,
+	y algo de clase enemigo.
+	???
+
+
