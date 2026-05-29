@@ -4,6 +4,7 @@
 #include "ui/states.h"
 #include "ui/menu.h"
 #include "ui/handshake.h"
+#include "ui/rooms.h"
 
 #include <uuid/uuid.h>
 
@@ -35,7 +36,9 @@ int main() {
         case MENU_SCREEN:
             UpdateMenu();
             break;
-
+        case ROOMS_SCREEN:
+            UpdateRooms();
+            break;
         default:
             break;
         }
@@ -54,7 +57,9 @@ int main() {
         case MENU_SCREEN:
             DrawMenu();
             break;
-        
+        case ROOMS_SCREEN:
+            DrawRooms();
+            break;
         default:
             break;
         }

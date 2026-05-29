@@ -1,6 +1,9 @@
 #include "ui/menu.h"
 #include "raylib.h"
 #include "ui/states.h"
+#include "ui/button.h"
+#include "ui/text.h"
+#include "ui/rooms.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -73,27 +76,54 @@ void DrawMenu() {
 
     DrawTextureEx(
         App.assets.logo,
-        (Vector2){180, 100},
+        (Vector2){(GetScreenWidth() - App.assets.logo.width * 0.4f) / 2, (GetScreenHeight() - App.assets.logo.height * 0.4f - 100) / 2},
         0.0f,
         0.4f,
         WHITE
     );
 
-    Rectangle PlayButton = {
-        300, 200, 200, 60
+    Button PlayButton = {
+        .bounds = {(GetScreenWidth() / 2) - 100, (GetScreenHeight() / 2) + 50, 200, 60},
+        .text = "Jugar",
+        .fontSize = 20,
+        .spacing = 2,
+        .textColor = WHITE,
+        .standbyColor = LIME,
+        .hoverColor = GRAY
     };
 
-    bool hover = CheckCollisionPointRec(
-        GetMousePosition(),
-        PlayButton
-    );
+    bool pressed = DrawButton(PlayButton);
 
-    if (hover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        printf("Hola");
+    if (pressed) {
+        App.currentScreen = GAME_SCREEN;
     }
 
-    DrawRectangleRec(
-        PlayButton,
-        hover ? DARKGREEN : GRAY
-    );
+    Button SpecButton = {
+        .bounds = {(GetScreenWidth() / 2) - 100, (GetScreenHeight() / 2) + 120, 200, 60},
+        .text = "Espectar",
+        .fontSize = 20,
+        .spacing = 2,
+        .textColor = WHITE,
+        .standbyColor = LIME,
+        .hoverColor = GRAY
+    };
+
+    pressed = DrawButton(SpecButton);
+
+    if (pressed) {
+        App.currentScreen = ROOMS_SCREEN;
+        InitRooms();
+    }
+
+    Text uuid = {
+        .text = App.client.uuid,
+        .position = (Vector2){10, GetScreenHeight() - 10},
+        .fontSize = 10,
+        .spacing = 1,
+        .color = WHITE,
+        .anchor = TEXT_ANCHOR_BOTTOM_LEFT,
+        .opacity = 0.5f
+    };
+
+    DrawUIText(uuid);
 }

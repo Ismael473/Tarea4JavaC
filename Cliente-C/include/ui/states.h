@@ -8,6 +8,7 @@ typedef enum {
     HANDSHAKE_SCREEN,
     MENU_SCREEN,
     GAME_SCREEN,
+    ROOMS_SCREEN
 } AppScreen;
 
 typedef struct {

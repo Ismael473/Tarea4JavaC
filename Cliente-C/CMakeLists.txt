@@ -12,6 +12,10 @@ add_executable(game
     src/ui/menu.c
     src/ui/handshake.c
     src/network/subscribe.c
+    src/ui/button.c
+    src/ui/text.c
+    src/ui/room_list.c
+    src/ui/rooms.c
 )
 
 file(COPY assets DESTINATION ${CMAKE_BINARY_DIR})
