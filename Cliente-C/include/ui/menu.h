@@ -4,6 +4,6 @@
 void UpdateMenu(void);
 void DrawMenu(void);
 
-void InitStars(void);
+void InitMenu(void);
 
 #endif

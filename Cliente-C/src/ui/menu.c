@@ -27,6 +27,10 @@ float RandomFloat(float min, float max)
         * (max - min);
 }
 
+void InitMenu() {
+    InitStars();
+}
+
 void InitStars() {
     for (int i = 0; i < STAR_COUNT; i++) {
         Stars[i].Pos = (Vector2) {
@@ -68,7 +72,7 @@ void DrawMenu() {
     }
 
     DrawTextureEx(
-        Logo,
+        App.assets.logo,
         (Vector2){180, 100},
         0.0f,
         0.4f,

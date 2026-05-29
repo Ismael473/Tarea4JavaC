@@ -3,6 +3,9 @@
 #include "raylib.h"
 #include "ui/states.h"
 #include "ui/menu.h"
+#include "ui/handshake.h"
+
+#include <uuid/uuid.h>
 
 
 int main() {
@@ -10,20 +13,25 @@ int main() {
     InitWindow(800, 450, "SpaCE Invaders");
     SetTargetFPS(60);
 
-    MainFont = LoadFontEx(
+    uuid_t uuid;
+    uuid_generate(uuid);
+    uuid_unparse(uuid, App.client.uuid);
+
+    App.assets.mainFont = LoadFontEx(
         "assets/fonts/PressStart2P-Regular.ttf",
         64,
         0,
         0
     );
 
-    Logo = LoadTexture("assets/ui/logo.png");
-
-    InitStars();
+    App.assets.logo = LoadTexture("assets/ui/logo.png");
 
     while (!WindowShouldClose()) {
-        switch (CurrentScreen)
+        switch (App.currentScreen)
         {
+        case HANDSHAKE_SCREEN:
+            UpdateHandshake();
+            break;
         case MENU_SCREEN:
             UpdateMenu();
             break;
@@ -38,8 +46,11 @@ int main() {
 
         BeginDrawing();
 
-        switch (CurrentScreen)
+        switch (App.currentScreen)
         {
+        case HANDSHAKE_SCREEN:
+            DrawHandshake();
+            break;
         case MENU_SCREEN:
             DrawMenu();
             break;
@@ -51,6 +62,8 @@ int main() {
         EndDrawing();
     }
 
+    UnloadTexture(App.assets.logo);
+    UnloadFont(App.assets.mainFont);
     CloseWindow();
     return 0;
 }

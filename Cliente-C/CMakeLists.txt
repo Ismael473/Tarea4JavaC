@@ -10,6 +10,8 @@ add_executable(game
     src/main.c
     src/states.c
     src/ui/menu.c
+    src/ui/handshake.c
+    src/network/subscribe.c
 )
 
 file(COPY assets DESTINATION ${CMAKE_BINARY_DIR})
@@ -18,6 +20,7 @@ include_directories(include)
 
 target_link_libraries(game
     raylib
+    uuid
     m
     pthread
     dl
