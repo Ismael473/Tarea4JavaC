@@ -20,8 +20,6 @@ void AddRoom(RoomList *list, const char *name, int spectatorCount) {
     strncpy(room->name, name, sizeof(room->name) - 1);
     room->name[sizeof(room->name) - 1] = '\0';
     room->spectatorCount = spectatorCount;
-
-    list->roomCount++;
 }
 
 int DrawRoomList(RoomList *list) {
@@ -36,7 +34,7 @@ int DrawRoomList(RoomList *list) {
     float contentHeight = list->roomCount * list->itemHeight;
     float maxScroll = contentHeight - list->bounds.height;
     if (maxScroll < 0) maxScroll = 0;
-    if (list->scrollOffset < 0) list->scrollOffset = 0;
+    if (list->scrollOffset > 0) list->scrollOffset = 0;
     if (list->scrollOffset < -maxScroll) list->scrollOffset = -maxScroll;
 
     DrawRectangleRec(list->bounds, Fade(GRAY, 0.5f));
@@ -65,7 +63,7 @@ int DrawRoomList(RoomList *list) {
 
         bool hovered = CheckCollisionPointRec(mousePos, itemRect);
 
-        if (hovered && IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
+        if (hovered && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             selectedRoom = i;
         }
 
@@ -86,10 +84,11 @@ int DrawRoomList(RoomList *list) {
         char info[64];
         snprintf(info, sizeof(info), "%d espectadores", list->rooms[i].spectatorCount);
 
+        Vector2 infoSize = MeasureTextEx(App.assets.mainFont, info, 20, 2);
         DrawTextEx(
             App.assets.mainFont,
             info,
-            (Vector2){itemRect.x + itemRect.width - 150, itemRect.y + 10},
+            (Vector2){itemRect.x + itemRect.width - infoSize.x - 10, itemRect.y + 10},
             20,
             2,
             WHITE

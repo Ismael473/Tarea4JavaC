@@ -4,12 +4,23 @@
 bool DrawButton(Button button) {
     bool hovered = CheckCollisionPointRec(GetMousePosition(), button.bounds);
 
-    bool pressed = hovered && IsMouseButtonDown(MOUSE_LEFT_BUTTON);
+    bool pressed = hovered && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
 
-    DrawRectangleRec(
-        button.bounds,
-        pressed ? button.hoverColor : button.standbyColor
-    );
+    Color bgColor;
+    if (pressed) {
+        bgColor = button.hoverColor;
+    } else if (hovered) {
+        bgColor = (Color){
+            button.standbyColor.r / 2,
+            button.standbyColor.g / 2,
+            button.standbyColor.b / 2,
+            button.standbyColor.a
+        };
+    } else {
+        bgColor = button.standbyColor;
+    }
+
+    DrawRectangleRec(button.bounds, bgColor);
 
     Vector2 textSize = MeasureTextEx(
         App.assets.mainFont,

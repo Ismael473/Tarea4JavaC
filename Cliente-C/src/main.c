@@ -2,11 +2,14 @@
 
 #include "raylib.h"
 #include "ui/states.h"
+#include "ui/stars.h"
 #include "ui/menu.h"
 #include "ui/handshake.h"
 #include "ui/rooms.h"
+#include "ui/game.h"
 
 #include <uuid/uuid.h>
+#include "network/unsubscribe.h"
 
 
 int main() {
@@ -27,7 +30,10 @@ int main() {
 
     App.assets.logo = LoadTexture("assets/ui/logo.png");
 
-    while (!WindowShouldClose()) {
+    InitStars();
+
+    while (!WindowShouldClose() && !App.shouldClose) {
+
         switch (App.currentScreen)
         {
         case HANDSHAKE_SCREEN:
@@ -38,6 +44,9 @@ int main() {
             break;
         case ROOMS_SCREEN:
             UpdateRooms();
+            break;
+        case GAME_SCREEN:
+            UpdateGame();
             break;
         default:
             break;
@@ -60,12 +69,17 @@ int main() {
         case ROOMS_SCREEN:
             DrawRooms();
             break;
+        case GAME_SCREEN:
+            DrawGame();
+            break;
         default:
             break;
         }
 
         EndDrawing();
     }
+
+    UnsubscribeFromServer();
 
     UnloadTexture(App.assets.logo);
     UnloadFont(App.assets.mainFont);

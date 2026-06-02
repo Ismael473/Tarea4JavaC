@@ -33,6 +33,7 @@ typedef struct {
     AppAssets assets;
     AppClient client;
     AppServer server;
+    bool shouldClose;
 } AppGlobals;
 
 

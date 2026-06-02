@@ -2,6 +2,7 @@
 #include <pthread.h>
 #include <math.h>
 
+#include "ui/stars.h"
 #include "ui/states.h"
 #include "ui/menu.h"
 #include "ui/handshake.h"
@@ -20,6 +21,8 @@ static void *SubscriptionThread(void *arg) {
 }
 
 void UpdateHandshake() {
+    UpdateStars();
+
     if (!subscriptionAttempted) {
         subscriptionAttempted = true;
         pthread_create(&subscriptionThread, NULL, SubscriptionThread, NULL);
@@ -41,6 +44,7 @@ void UpdateHandshake() {
 
 void DrawHandshake() {
     ClearBackground(BLACK);
+    DrawStars();
 
     const char *Text = "Connecting to the server...";
 

@@ -1,25 +1,29 @@
 package spaceinvaders.ce1106.server;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.*;
-import java.net.*;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.ServerSocket;
+import java.net.Socket;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import spaceinvaders.ce1106.client.ClientSession;
+import spaceinvaders.ce1106.server.command.Command;
+import spaceinvaders.ce1106.server.command.CommandFactory;
+import spaceinvaders.ce1106.server.context.ConnectionContext;
+import spaceinvaders.ce1106.server.context.ServerContext;
 
 public class Server {
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
     public static final String discoveryMessage = "DISCOVER_SPACEINVADERS";
 
-    private static final Gson GSON = new Gson();
-    private final Map<UUID, ClientSession> clients = new ConcurrentHashMap<>();
+    private final ServerContext serverContext = new ServerContext();
+    private final CommandFactory commandFactory = new CommandFactory();
 
     public void start() throws IOException {
         int port = 5000;
@@ -37,50 +41,29 @@ public class Server {
                     }
                 }).start();
             }
-        } catch (
-                IOException e
-        ) {
+        } catch (IOException e) {
             LOG.error("Something went wrong while enabling the server: " + e.getMessage());
         }
     }
 
     private void handleClient(Socket clientSocket) throws IOException {
-        UUID clientId = null;
-
         try (BufferedReader in = new BufferedReader(
                 new InputStreamReader(clientSocket.getInputStream())
         );
-        PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);) {
-            String handshake = in.readLine();
-            if (handshake == null) {
+        PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
+            String line = in.readLine();
+            if (line == null) {
                 return;
             }
 
-            JsonObject jsonObject = JsonParser.parseString(handshake).getAsJsonObject();
+            LOG.debug("Request received: {}", line);
 
+            JsonObject jsonObject = JsonParser.parseString(line).getAsJsonObject();
             String type = jsonObject.get("type").getAsString();
 
-            if (!type.equals("subscribe")) {
-                JsonObject response = new JsonObject();
-                response.addProperty("type", "error");
-                response.addProperty("message", "Invalid handshake received");
-            }
-
-            clientId = UUID.fromString(jsonObject.get("clientId").getAsString());
-
-            ClientSession client = new ClientSession(
-                    clientSocket,
-                    out,
-                    clientId
-            );
-
-            clients.put(clientId, client);
-            LOG.info("Client {} connected", clientId);
-
-            JsonObject response = new JsonObject();
-            response.addProperty("status", "ok");
-
-            out.println(GSON.toJson(response));
+            Command command = commandFactory.create(type);
+            ConnectionContext connection = new ConnectionContext(clientSocket, out);
+            command.execute(jsonObject, connection, serverContext);
 
         } catch (Exception ex) {
             LOG.error(ex.getMessage(), ex);
