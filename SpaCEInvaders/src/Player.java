@@ -22,10 +22,15 @@ public class Player extends Entity
 
         this.sprite = sprite;
         // this.sprite_offset = sprite_offset;
+
+        death_animation = "player_death_animation";
+
+        width = 13;
+        height = 8;
     }
 
     @Override
-    public void Move(boolean direction)
+    public void Move(Boolean direction)
     {
         // System.out.println("Hi");
         if (direction){this.x -= move_distance;} // Move left.

@@ -9,9 +9,12 @@ public class SpaCEInvaders
     // A Boolean representing the direction, [false, true] -> [right, left]
     // A Boolean representing the descending movement state, [false, true] -> [not descending, descending]
     Alien[] aliens = new Alien[55]; // (There are 55 Aliens at the start of a game)
-    Entity[] entities = new Entity[56]; // entities holds the fixed entities. i. e. all except bullets. UFO?
+    Entity[] entities = new Entity[132]; // entities holds the fixed entities. i. e. all except bullets. UFO?
+    // Entity count: 55 Aliens, 1 player, 3 Bunkers of 19 bunker blocks.
     int right_descend_limit = 198;
     int left_descend_limit = 0;
+    int player_height = 0;  // This is a y coordinate value that the bottom of the player sprite touches.
+                            // This is also the win condition for aliens to win. ( If the bottom of their sprite touches this value).
 
     int current_moving_alien = 0;
     boolean direction = false;
@@ -23,7 +26,7 @@ public class SpaCEInvaders
     // Singleton singleton receives the inputs
     // Bullet player_bullet
     Singleton singleton = new Singleton();
-    Player player = new Player(80, 0, 0);
+    Player player = new Player(80, 8, 0);
 
 
     // Bullet 
@@ -36,6 +39,24 @@ public class SpaCEInvaders
     // Graphics
     // current_destroyed_entities holds the entities that have been set as dead in the current frame.
     ArrayList<Entity> current_destroyed_entities = new ArrayList<>();
+    GameStateSerializer game_state_serializer = new GameStateSerializer(); 
+
+    // Game state
+    GameStatesEnum current_game_state = GameStatesEnum.MainMenu;
+    int current_game_state_frame_count = 0; // Number of frames since the last game state change.
+    Integer score = 0;
+    Integer lives = 3;
+    // enter_game_state_event is modified in the EnterState...() functions.
+    // enter_game_state_event is set to a different string for the first frame a new game state is entered.
+    // enter_game_state_event is set back to "" after the first frame has passed.
+    String enter_game_state_event = ""; 
+    
+    // Bunkers
+    Integer bunker_count = 4;
+    Integer bunkers_start_x = 14;
+    Integer bunkers_spacing_x = (right_descend_limit - bunkers_start_x)/bunker_count;
+    Integer bunkers_starting_y = 20;
+    Bunker[] bunkers = new Bunker[bunker_count]; // (There are 55 Aliens at the start of a game) 
 
     SpaCEInvaders()
     {
@@ -43,7 +64,7 @@ public class SpaCEInvaders
         for (int i = 0; i < aliens.length; i++)
         {
             int create_alien_x = 18 + (i%11)*16;
-            int create_alien_y = 72 + (i/11)*16;
+            int create_alien_y = 72 + ((54-i)/11)*16;
             int sprite = i/22*2;
             Alien create_alien = new Alien(create_alien_x, create_alien_y, sprite);
             aliens[i] = create_alien;
@@ -55,38 +76,125 @@ public class SpaCEInvaders
         // System.arraycopy(aliens, 0, entities, 0, aliens.length); // Adds all aliens to the entities array.
         entities[55] = player;
 
+        // Create a bunker_count amount of Bunker objects and add each of their BunkerBlock objects to entities.
+        for (int i = 0; i < bunker_count; i++)
+        {
+            Bunker bunker_to_add = new Bunker(bunkers_start_x + i*bunkers_spacing_x, bunkers_starting_y);
+            for (int j = 0; j < bunker_to_add.bunker_blocks.length; j++)
+            {
+                entities[56 + bunker_to_add.bunker_blocks.length*i + j] = bunker_to_add.bunker_blocks[j];
+            }
+            bunkers[i] = bunker_to_add;
+        }
     }
 
-    public void GameLoop()
+    // Chooses an advance frame behavior for the game based on current_game_state.
+    // current_game_state is updated by the advance frame functions.
+    public String Update()
     {
-        System.out.println("Enter GameLoop");
-        AdvanceFrame();
-        ShowGame();
+        System.out.println("Enter Update");
 
-        // try
-        // {
-        //     Thread.sleep(16);
-        // }
-        // catch (InterruptedException e)
-        // {
-        //     e.printStackTrace();
-        // }
+        current_game_state_frame_count ++;
+        enter_game_state_event = "";    // Reset the newly entered game state event.
+        // Json respond. It is completed by GameStateSerializer.
+        // The function from GameStateSerializer depends on the game state.
+        //      There are two responses: with and without including entities.
+        String Json_to_send = "";       
+
+        // Executes a frame. Chooses behavior based on current_game_state.
+        System.out.print("Frame count = " + current_game_state_frame_count);
+        switch (current_game_state)
+        {
+            case GameStatesEnum.LoadNextRound:
+                System.out.println("current_game_state is LoadNextRound");
+                AdvanceFrameLoadNextRound();
+                Json_to_send = game_state_serializer.createGameStateJsonNoEntities(score, lives, enter_game_state_event);   
+                break;
+            case GameStatesEnum.SpawnAliens:
+                System.out.println("current_game_state is SpawnAliens");
+                AdvanceFrameSpawnAliens();
+                Json_to_send = game_state_serializer.createGameStateJson(score, lives, enter_game_state_event, entities, bullets);
+                break;
+            case GameStatesEnum.GameLoop:
+                System.out.println("current_game_state is GameLoop");
+                AdvanceFrame();
+                Json_to_send = game_state_serializer.createGameStateJson(score, lives, enter_game_state_event, entities, bullets);
+                break;
+            case GameStatesEnum.DeathAnimation:
+                System.out.println("current_game_state is DeathAnimation");
+                AdvanceFrameDeathAnimation();
+                Json_to_send = game_state_serializer.createGameStateJson(score, lives, enter_game_state_event, entities, bullets);
+                break;
+            case GameStatesEnum.GameOver:
+                System.out.println("current_game_state is GameOver");
+                AdvanceFrameGameOver();
+                Json_to_send = game_state_serializer.createGameStateJsonNoEntities(score, lives, enter_game_state_event);   
+                break;
+            case GameStatesEnum.WinAnimation:
+                System.out.println("current_game_state is WinAnimation");
+                AdvanceFrameWinAnimation();
+                Json_to_send = game_state_serializer.createGameStateJson(score, lives, enter_game_state_event, entities, bullets);
+                break;
+            case GameStatesEnum.MainMenu:
+                System.out.println("current_game_state is MainMenu");
+                AdvanceFrameMainMenu();
+                Json_to_send = game_state_serializer.createGameStateJsonNoEntities(score, lives, enter_game_state_event);   
+                break;
+        
+            default:
+                System.out.println("ERROR: invalid game state in Update().");
+                break;
+        }
+
+
+        // ShowGame();
+        System.out.println(Json_to_send);
+        DebugShowPlayerInput();
+        
+        ResetControllerState();
+        return Json_to_send;
+
+
+    }
+
+    // public String GenerateJSON()
+    // {
+        
+    // }
+
+    private void ResetControllerState()
+    {
+        singleton.right_is_pressed = false;
+        singleton.left_is_pressed = false;
+        singleton.shoot_is_pressed = false;
+    }
+
+    private void DebugShowPlayerInput()
+    {System.out.println("(left, right, shoot, player_dead?, player_bullet_dead?) = " + singleton.left_is_pressed + ", " + singleton.right_is_pressed + ", " + singleton.shoot_is_pressed + ", " + player.dead + ", " + player_bullet.dead);}
+
+    private void ClearRecentDeaths()
+    {
+        for (Entity entity : entities)
+        {
+            entity.died_this_frame = false;
+        }
+        for (Bullet bullet : bullets)
+        {
+            bullet.died_this_frame = false;
+        }
     }
 
 
 
-
-
-
-
-
-
+    // Advance frame behavior for the playable game.
     private void AdvanceFrame()
     {
+        ClearRecentDeaths();
         // Win condition
         if (destroyed_aliens_counter >= aliens.length)
         {
             System.out.println("AdvanceFrame(): Win condition met! destroyed_aliens_counter = " + destroyed_aliens_counter);
+            EnterStateWinAnimation();
         }
 
         // Alien movement
@@ -151,6 +259,12 @@ public class SpaCEInvaders
             }
             bullet.Move();
         }
+
+        // Player death logic.
+        if (player.dead)
+        {
+            current_game_state = GameStatesEnum.DeathAnimation;
+        }
     }
 
     private void ShowGame()
@@ -190,8 +304,8 @@ public class SpaCEInvaders
         {
             if (EntitiesAreColliding(entity, bullet))
             {
-                entity.dead = true;
-                bullet.dead = true;
+                entity.SetAsDead();
+                bullet.SetAsDead();
                 bullets.remove(bullet);
                 current_destroyed_entities.add(entity);
                 current_destroyed_entities.add(bullet);
@@ -301,18 +415,183 @@ public class SpaCEInvaders
 
     boolean DescentCondition(boolean direction)
     {
-        if (direction)
-        {
-            Alien rightmost_alien = GetRightmostAlien(0);
-            if (rightmost_alien.x >= right_descend_limit) {return true;}
-        }
-        else
+        if (direction)  // True means left.
         {
             Alien leftmost_alien = GetLeftmostAlien(0);
+            System.out.println("DescentCondition(): leftmost_alien.(x,y) = (" + leftmost_alien.x + ", " + leftmost_alien.y);
             if (leftmost_alien.x <= left_descend_limit) {return true;}
+        }
+            else
+        {
+            Alien rightmost_alien = GetRightmostAlien(0);
+            System.out.println("DescentCondition(): rightmost_alien.(x,y) = (" + rightmost_alien.x + ", " + rightmost_alien.y);
+            if (rightmost_alien.x >= right_descend_limit) {return true;}
         }
         return false;
     }
+
+
+
+    private void EnterStateLoadNextRound()
+    {
+        enter_game_state_event = "load_next_round";
+        current_game_state = GameStatesEnum.LoadNextRound;
+        current_game_state_frame_count = 0;
+    }
+
+    // LoadNextRound logic.
+    // Waits some frames between destroying the last alien during GameLoop and start spawing the next round during SpawnAliens.
+    // The graphic interface should draw a black rectangle moving from left to right of about a third of the screen wide
+    // for the transition.
+    // Regenerates the bunkers. TODO!!!!!!!!!
+    private void AdvanceFrameLoadNextRound()
+    {
+        // Revive some of the bunker blocks each frame.
+        // Revives blocks evenly during the frames until GameStatesDuration.LoadNextRoundFrameCount.frames
+        //  (i. e. until this game state finishes).
+        Integer bunker_blocks_count = bunker_count*bunkers[0].bunker_blocks.length;
+        Integer current_frame_bottom_limit = bunker_blocks_count*current_game_state_frame_count/GameStatesDuration.LoadNextRoundFrameCount.frames;
+        Integer current_frame_top_limit =    bunker_blocks_count*(current_game_state_frame_count+1)/GameStatesDuration.LoadNextRoundFrameCount.frames - 1;
+        
+        Integer bunker_blocks_offset = entities.length - bunker_blocks_count;
+        for (int i = current_frame_bottom_limit; i <= current_frame_top_limit; i++)
+        {
+            // if bunker_blocks_offset + i is a valid index in entities, revive the BunkerBlock at i.
+            if (bunker_blocks_offset + i < entities.length){entities[bunker_blocks_offset + i].dead = false;}
+        }
+        if (current_game_state_frame_count >= GameStatesDuration.LoadNextRoundFrameCount.frames)
+        {
+            EnterStateSpawnAliens();
+        }
+    }
+
+    private void EnterStateSpawnAliens()
+    {
+        enter_game_state_event = "spawn_aliens";
+        current_game_state = GameStatesEnum.SpawnAliens;
+        current_game_state_frame_count = 0;
+    }
+
+    
+    // SpawnAliens logic.
+    // Repositions and revives (set dead as false again) all 55 aliens.
+    // current_game_state_frame_count must start at 0.
+    private void AdvanceFrameSpawnAliens()
+    {
+        if (current_game_state_frame_count >= GameStatesDuration.SpawnAliensFrameCount.frames)
+        {
+            EnterStateGameLoop();
+        }
+        int x = 18 + (current_game_state_frame_count%11)*16;
+        int y = 72 + ((54-current_game_state_frame_count)/11)*16;
+        // int sprite = current_game_state_frame_count/22*2;
+        aliens[current_game_state_frame_count].x = x;
+        aliens[current_game_state_frame_count].y = y;
+        // aliens[current_game_state_frame_count].sprite = sprite;
+        aliens[current_game_state_frame_count].dead = false;
+        aliens[current_game_state_frame_count].sprite_offset = 0;
+        System.out.println("alien (x, y, sprite, dead) = (" + aliens[current_game_state_frame_count].x + ", " + aliens[current_game_state_frame_count].y + ", " + aliens[current_game_state_frame_count].sprite + ", " + aliens[current_game_state_frame_count].dead + ")");
+    }   
+
+    private void EnterStateGameLoop()
+    {
+        enter_game_state_event = "game_loop";
+        current_game_state = GameStatesEnum.GameLoop;
+        current_game_state_frame_count = 0;
+        ReviveAndResetPlayer();
+    }
+
+    private void AdvanceFrameDeathAnimation()
+    {
+        // 0 <= current_game_state_frame_count < 56     (i. e. 56 frames).
+            // Let the death animation play (i. e. do nothing).
+        // current_game_state_frame_count == 56         (i. e. 1 frame).
+            // Subtract 1 life.
+        // 57 <= current_game_state_frame_count < 187   (i. e. 130 frames).
+            // Do nothing.
+        // current_game_state_frame_count == 187         (i. e. 1 frame).
+            // teleport player to x = 0.
+            // revive player.
+        if (current_game_state_frame_count == 56)   // Subtract 1 life go to GameOver if there are 0 left.
+        {
+            lives --;
+            if (lives <= 0)
+            {
+                EnterStateGameOver();
+            }
+        }
+        if (current_game_state_frame_count == 187)  // Revives the player.
+        {
+            player.x = 0;
+            player.dead = false;
+        }
+        if (current_game_state_frame_count > 187)   // The player regains control one frame after reviving.
+        {
+            EnterStateGameLoop();
+        }
+    }
+
+    private void EnterStateGameOver()
+    {
+        enter_game_state_event = "game_over";
+        current_game_state = GameStatesEnum.GameOver;
+        current_game_state_frame_count = 0;
+    }
+
+    private void AdvanceFrameGameOver()
+    {
+        // 0 <= current_game_state_frame_count < 180     (i. e. 180 frames).
+            // plays the game over animation.
+        // 180 <= current_game_state_frame_count < 260     (i. e. 80 frames).
+            // Starts transition to the main menu.
+        if (current_game_state_frame_count == 180)  // Revives the player.
+        {
+            System.out.println("GameOver: Play black panel transition.");
+        }
+        if (current_game_state_frame_count > 260)   // The player regains control one frame after reviving.
+        {
+            EnterStateMainMenu();
+        }        
+    }
+
+    private void EnterStateMainMenu()
+    {
+        enter_game_state_event = "main_menu";
+        current_game_state = GameStatesEnum.GameOver;
+        current_game_state_frame_count = 0;
+    }
+
+    private void AdvanceFrameMainMenu()
+    {
+        // Press any button to start the game.
+        if (singleton.right_is_pressed || singleton.left_is_pressed || singleton.shoot_is_pressed)
+            {EnterStateLoadNextRound();}
+    }
+
+    private void EnterStateWinAnimation()
+    {
+        enter_game_state_event = "win_animation";
+        current_game_state = GameStatesEnum.WinAnimation;
+        current_game_state_frame_count = 0;
+    }
+
+    private void AdvanceFrameWinAnimation()
+    {
+        // 0 <= current_game_state_frame_count < 45     (i. e. 45 frames).
+            // Simply freezes the game for a short duration.
+        if (current_game_state_frame_count > 45)   // The player regains control one frame after reviving.
+        {
+            EnterStateLoadNextRound();
+        }     
+    }
+
+    private void ReviveAndResetPlayer()
+    {
+        player.dead = false;
+        player.x = 80;
+        player.y = 8;
+    }
+
 
 
 }

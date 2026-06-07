@@ -47,6 +47,9 @@ public class Bullet extends Entity
         this.sprite = sprite;
         this.sprite_count = sprite_count;
         // this.sprite_offset = sprite_offset;
+
+        death_animation = "bullet_death_animation";
+
     }
 
     // "@Override" -> This is not the same Move(boolean direction). This one takes no argument. 

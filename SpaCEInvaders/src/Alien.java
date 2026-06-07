@@ -6,7 +6,7 @@ public class Alien extends Entity
     // public boolean dead = false;
     
     // int move_distance = 2;
-    int descend_distance = 8;
+    int descent_distance = 8;
     // int x;
     // int y;
     
@@ -25,19 +25,23 @@ public class Alien extends Entity
 
         this.sprite = sprite;
         // this.sprite_offset = sprite_offset;
+
+        death_animation = "alien_death_animation";
+        dead = true;
     }
 
     @Override
-    public void Move(boolean direction)
+    public void Move(Boolean direction)
     {
         System.out.println("Alien Move(): direction = " + direction);
         if (direction){this.x -= move_distance;} // Move left.
         else          {this.x += move_distance;} // Move right.
+        sprite_offset = 1 - sprite_offset;
     }
     public void Descend()
     {
         // System.out.println("Hi");
-        this.y += descend_distance;
+        this.y += descent_distance;
     }
 
     // Returns a bullet or null if the Alien didn't shoot.

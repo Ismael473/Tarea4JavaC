@@ -1,14 +1,52 @@
+import javax.swing.JFrame;
+
+
 public class Main {
     public static void main(String[] args) {
         System.out.println("Hello SpaCE");
         // Player player;
         // Test t = new Test();
         // t.hello();
+        
+        /////// RECEIVE KEYBOARD LOGIC ///////
+        JFrame window = new JFrame("Keyboard Test");
+        Keyboard listener = new Keyboard();
+        
+        window.addKeyListener(listener);
+        window.setSize(400, 400);
+        window.setVisible(true);
+        window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        /////// RECEIVE KEYBOARD LOGIC ///////
+
+
 
         SpaCEInvaders game = new SpaCEInvaders();
-        for (int i = 0; i < 620; i++)
+        Singleton singleton = game.singleton; 
+        
+        for (int i = 0; i < 600; i++)
         {
-            game.GameLoop();
+            /////// RECEIVE KEYBOARD LOGIC ///////
+            singleton.left_was_pressed      = singleton.left_is_pressed; 
+            singleton.right_was_pressed     = singleton.right_is_pressed; 
+            singleton.shoot_was_pressed     = singleton.shoot_is_pressed; 
+            
+            singleton.left_is_pressed       = Keyboard.a;
+            singleton.right_is_pressed      = Keyboard.d;
+            singleton.shoot_is_pressed      = Keyboard.w;
+            /////// RECEIVE KEYBOARD LOGIC ///////
+
+
+            game.Update();
+            
+            try
+            {
+                // Thread.sleep(16);
+                Thread.sleep(166);
+            }
+            catch (InterruptedException e)
+            {
+                e.printStackTrace();
+            }
         }
         System.out.println("Bye SpaCE");
     }

@@ -191,6 +191,34 @@ Dessign requirements
 			AlienFactory inherits from AbstractFactory
 			Squid, Crab, and Octopus inherit from Alien
 			Alien inherits from Entity
+------------------------------------------------------------------
+Json to send from Java to C.
+{
+	"score": 123,
+	"lives": 123,
+	"enter_game_state_event": "death_animation",
+
+	"enemies":
+	[
+		{
+			"x": 123,
+			"y": 123,
+			"sprite": 123,
+			"animation": "alien_death_animation"
+		},
+		{
+			"x": 456,
+			"y": 456,
+			"sprite": 456,
+			"animation": ""
+		}
+	]
+}
+
+
+
+
+
 
 
 
@@ -249,5 +277,48 @@ abstract factory
 	hay 3 clases calamar, pulpo y cangrejo,
 	y algo de clase enemigo.
 	???
+
+
+
+
+
+
+id, sprite
+00, player_cannon.PNG
+
+01, crab_1_isolated.PNG
+02, crab_2_isolated.PNG
+03, octopus_1_isolated.PNG
+04, octopus_2_isolated.PNG
+05, squid_1_isolated.PNG
+06, squid_2_isolated.PNG
+
+07, bullet_player.PNG
+08, bullet_a_0.PNG
+09, bullet_a_1.PNG
+10, bullet_a_2.PNG
+11, bullet_a_3.PNG
+12, bullet_b_0.PNG
+13, bullet_b_1.PNG
+14, bullet_b_2.PNG
+15, bullet_b_3.PNG
+16, bullet_c_0.PNG
+17, bullet_c_1.PNG
+18, bullet_c_2.PNG
+19, bullet_c_3.PNG
+
+20, bunker_sprite_bottom_left.PNG 
+21, bunker_sprite_bottom_right.PNG
+22, bunker_sprite_full.PNG
+23, bunker_sprite_top_left.PNG
+24, bunker_sprite_top_right.PNG
+
+25, player_explotion_0.PNG
+26, player_explotion_1.PNG
+27, alien_bullet_explotion.PNG
+28, alien_explotion.PNG
+
+
+
 
 
