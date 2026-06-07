@@ -12,8 +12,7 @@ public class Player extends Entity
     // int sprite;
     // // int sprite_offset = 0;
     
-    Bullet bullet = new Bullet(-1, -1, -1, -1, -1, true, -1, -1); // Use a dead bullet as default.
-
+    Bullet bullet = new Bullet(); // Use a dead bullet as default.
 
     Player(int x, int y, int sprite)
     {
@@ -27,6 +26,7 @@ public class Player extends Entity
 
         width = 13;
         height = 8;
+
     }
 
     @Override
@@ -41,7 +41,11 @@ public class Player extends Entity
     public Bullet SpawnBullet()
     {
         // Bullet(int x, int y, int move_distance, int move_cooldown, int sprite, boolean move_up, int sprite_count, int height)
-        if (this.bullet.dead){return new Bullet(x+width/2, y+5, 4, 0, 0, true, 1, 4);}
+        if (this.bullet.dead)
+        {
+            this.bullet = new Bullet(x+width/2 - 1, y-5, 4, 0, 7, true, 1, 3, 4);
+            return this.bullet;
+        }
         return null;
     }
 

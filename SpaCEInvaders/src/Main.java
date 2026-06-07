@@ -38,10 +38,17 @@ public class Main {
 
             game.Update();
             
+            Integer sleep_time;
+            if (game.current_game_state != GameStatesEnum.GameLoop) {sleep_time = 33;}
+            else {sleep_time = 333;}
+
+            if (game.current_game_state == GameStatesEnum.DeathAnimation) {sleep_time = 166;}
+
+
             try
             {
                 // Thread.sleep(16);
-                Thread.sleep(166);
+                Thread.sleep(sleep_time);
             }
             catch (InterruptedException e)
             {

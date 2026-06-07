@@ -278,6 +278,13 @@ abstract factory
 	y algo de clase enemigo.
 	???
 
+packages
+Make an entities package.
+
+
+
+
+
 
 
 

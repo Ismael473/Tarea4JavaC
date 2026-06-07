@@ -26,7 +26,7 @@ public class GameStateSerializer
         {
             if (!entity.dead)
             {
-                System.out.println("entity (x, y, sprite, dead) = (" + entity.x + ", " + entity.y + ", " + entity.sprite + ", " + entity.dead + ")");
+                // System.out.println("entity (x, y, sprite, dead) = (" + entity.x + ", " + entity.y + ", " + entity.sprite + ", " + entity.dead + ")");
                 JsonObject entity_to_add = new JsonObject();
                 entity_to_add.addProperty("x", entity.x);
                 entity_to_add.addProperty("y", entity.y);
@@ -41,6 +41,7 @@ public class GameStateSerializer
         {
             if (!entity.dead)
             {
+                System.out.println("bullet (x, y, sprite, dead) = (" + entity.x + ", " + entity.y + ", " + entity.sprite + ", " + entity.dead + ")");
                 JsonObject entity_to_add = new JsonObject();
                 entity_to_add.addProperty("x", entity.x);
                 entity_to_add.addProperty("y", entity.y);

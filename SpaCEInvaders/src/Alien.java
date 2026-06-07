@@ -1,3 +1,5 @@
+import java.util.Random;
+
 public class Alien extends Entity
 {
     // int width = 12; // Squids, 8; Crabs, 11; Octopuses, 12
@@ -13,8 +15,9 @@ public class Alien extends Entity
     // int sprite;
     // int sprite_offset = 0;
     
-    Bullet bullet = new Bullet(-1, -1, -1, -1, -1, true, -1, -1); // Use a dead bullet as default.
-
+    Bullet bullet = new Bullet(); // Use a dead bullet as default.
+    Random random = new Random();   // Used for random bullet sprites.
+    
     double normal_distribution_standard_deviation = 0.5;
 
     Alien(int x, int y, int sprite)
@@ -29,11 +32,21 @@ public class Alien extends Entity
         death_animation = "alien_death_animation";
         dead = true;
     }
+    Alien(int sprite, String death_animation)
+    {
+        super();    // Maybe this is necessary for polymorphism to work? Possible error.
+
+        this.sprite = sprite;
+        // this.sprite_offset = sprite_offset;
+
+        this.death_animation = death_animation;
+        dead = true;
+    }
 
     @Override
     public void Move(Boolean direction)
     {
-        System.out.println("Alien Move(): direction = " + direction);
+        // System.out.println("Alien Move(): direction = " + direction);
         if (direction){this.x -= move_distance;} // Move left.
         else          {this.x += move_distance;} // Move right.
         sprite_offset = 1 - sprite_offset;
@@ -52,7 +65,8 @@ public class Alien extends Entity
         // Shoot condition
         if (this.bullet.dead && Math.random() < NormalDistribution(this.x, normal_distribution_standard_deviation, player_x))
         {
-            this.bullet = new Bullet(this.x+width/2, this.y + this.height + 5, 4, 3, 1, false, 4, 7);
+            Integer random_bullet_sprite = random.nextInt(3)*4 + 8;
+            this.bullet = new Bullet(this.x+width/2, this.y + this.height + 5, 4, 3, random_bullet_sprite, false, 4, 3, 7);
             return this.bullet;
         }
         // If the shooting condition wasn't met.

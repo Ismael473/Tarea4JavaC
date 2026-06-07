@@ -15,6 +15,8 @@ public class SpaCEInvaders
     int left_descend_limit = 0;
     int player_height = 0;  // This is a y coordinate value that the bottom of the player sprite touches.
                             // This is also the win condition for aliens to win. ( If the bottom of their sprite touches this value).
+    AliensConcreteFactory aliens_concrete_factory = new AliensConcreteFactory();
+
 
     int current_moving_alien = 0;
     boolean direction = false;
@@ -26,7 +28,9 @@ public class SpaCEInvaders
     // Singleton singleton receives the inputs
     // Bullet player_bullet
     Singleton singleton = new Singleton();
-    Player player = new Player(80, 8, 0);
+    Integer player_starting_position_x = 80;
+    Integer player_starting_position_y = 247;
+    Player player = new Player(player_starting_position_x, player_starting_position_y, 0);
 
 
     // Bullet 
@@ -58,15 +62,66 @@ public class SpaCEInvaders
     Integer bunkers_starting_y = 20;
     Bunker[] bunkers = new Bunker[bunker_count]; // (There are 55 Aliens at the start of a game) 
 
+    // SpaCEInvaders()
+    // {
+    //     // Entity Array
+    //     for (int i = 0; i < aliens.length; i++)
+    //     {
+    //         int create_alien_x = 18 + (i%11)*16;
+    //         int create_alien_y = 72 + ((54-i)/11)*16;
+    //         int sprite = i/22*2;
+    //         Alien create_alien = new Alien(create_alien_x, create_alien_y, sprite);
+    //         aliens[i] = create_alien;
+    //         entities[i] = create_alien;
+    //         System.out.println("alien (x, y, sprite, dead) = (" + aliens[i].x + ", " + aliens[i].y + ", " + aliens[i].sprite + ", " + aliens[i].dead + ")");
+    //         // System.out.println("entity (x, y, sprite, dead) = (" + entities[i].x + ", " + aliens[i].y + ", " + aliens[i].sprite + ", " + aliens[i].dead + ")");
+
+    //     }
+    //     // System.arraycopy(aliens, 0, entities, 0, aliens.length); // Adds all aliens to the entities array.
+    //     entities[55] = player;
+
+    //     // Create a bunker_count amount of Bunker objects and add each of their BunkerBlock objects to entities.
+    //     for (int i = 0; i < bunker_count; i++)
+    //     {
+    //         Bunker bunker_to_add = new Bunker(bunkers_start_x + i*bunkers_spacing_x, bunkers_starting_y);
+    //         for (int j = 0; j < bunker_to_add.bunker_blocks.length; j++)
+    //         {
+    //             entities[56 + bunker_to_add.bunker_blocks.length*i + j] = bunker_to_add.bunker_blocks[j];
+    //         }
+    //         bunkers[i] = bunker_to_add;
+    //     }
+    // }
     SpaCEInvaders()
     {
         // Entity Array
         for (int i = 0; i < aliens.length; i++)
         {
-            int create_alien_x = 18 + (i%11)*16;
-            int create_alien_y = 72 + ((54-i)/11)*16;
-            int sprite = i/22*2;
-            Alien create_alien = new Alien(create_alien_x, create_alien_y, sprite);
+            int alien_x = 18 + (i%11)*16;
+            int alien_y = 72 + ((54-i)/11)*16;
+            
+            Integer index_to_alien_type = i/22*2;
+            Alien create_alien;
+
+            switch (index_to_alien_type)
+            {
+                case 0:
+                    create_alien = aliens_concrete_factory.CreateOctopus();
+                    break;
+                case 1:
+                    create_alien = aliens_concrete_factory.CreateCrab();
+                    break;
+                case 2:
+                    create_alien = aliens_concrete_factory.CreateSquid();
+                    break;
+            
+                default:
+                    System.out.println("Reached default case in Alien creation of SpaCEInvaders constructor!");
+                    create_alien = aliens_concrete_factory.CreateCrab();
+                    break;
+            }
+
+            create_alien.x = alien_x;
+            create_alien.y = alien_y;
             aliens[i] = create_alien;
             entities[i] = create_alien;
             System.out.println("alien (x, y, sprite, dead) = (" + aliens[i].x + ", " + aliens[i].y + ", " + aliens[i].sprite + ", " + aliens[i].dead + ")");
@@ -102,7 +157,7 @@ public class SpaCEInvaders
         String Json_to_send = "";       
 
         // Executes a frame. Chooses behavior based on current_game_state.
-        System.out.print("Frame count = " + current_game_state_frame_count);
+        System.out.print("Frame count = " + current_game_state_frame_count + "; ");
         switch (current_game_state)
         {
             case GameStatesEnum.LoadNextRound:
@@ -148,8 +203,8 @@ public class SpaCEInvaders
 
 
         // ShowGame();
-        System.out.println(Json_to_send);
-        DebugShowPlayerInput();
+        // System.out.println(Json_to_send);
+        DebugShowGame();
         
         ResetControllerState();
         return Json_to_send;
@@ -169,8 +224,21 @@ public class SpaCEInvaders
         singleton.shoot_is_pressed = false;
     }
 
-    private void DebugShowPlayerInput()
-    {System.out.println("(left, right, shoot, player_dead?, player_bullet_dead?) = " + singleton.left_is_pressed + ", " + singleton.right_is_pressed + ", " + singleton.shoot_is_pressed + ", " + player.dead + ", " + player_bullet.dead);}
+    public void MoveRight() {singleton.right_is_pressed = true;}
+    public void MoveLeft() {singleton.left_is_pressed = true;}
+
+    private void DebugShowGame()
+    {
+        System.out.println("(left, right, shoot, player_dead?, player_bullet_dead?) = " + singleton.left_is_pressed + ", " + singleton.right_is_pressed + ", " + singleton.shoot_is_pressed + ", " + player.dead + ", " + player_bullet.dead);
+        System.out.println("bullets.size() = " + bullets.size());
+        System.out.println("player (x, y, sprite, dead) = (" + player.x + ", " + player.y + ", " + player.sprite + ", " + player.dead + ")");
+        System.out.println();
+
+        // for (Bullet bullet : bullets)
+        // {
+        //     System.out.println("bullet (x, y, sprite, dead) = (" + bullet.x + ", " + bullet.y + ", " + bullet.sprite + ", " + bullet.dead + ")");
+        // }
+    }
 
     private void ClearRecentDeaths()
     {
@@ -238,32 +306,46 @@ public class SpaCEInvaders
         EmitShots();    // This modifies the bullets list.
 
         // Player movement and shooting
-        if (singleton.left_is_pressed)  {player.Move(true);}
-        if (singleton.right_is_pressed) {player.Move(false);}
+        if (singleton.left_is_pressed && player.x >= left_descend_limit)  {player.Move(true);}
+        if (singleton.right_is_pressed && player.x <= right_descend_limit) {player.Move(false);}
         if (singleton.shoot_is_pressed)
         {
             Bullet possible_player_bullet = player.SpawnBullet();
-            if (possible_player_bullet != null) {bullets.add(possible_player_bullet);}
+            if (possible_player_bullet != null)
+            {
+                bullets.add(possible_player_bullet);
+                player_bullet = player.bullet;
+            }
         }
 
         // Bullet movement and collisions
         // for (Bullet bullet : bullets)    // This doesn't allow to remove while iterating.
         // Uses a backwards for loop for deleting bullets while iterating the list.
-        for (int i = bullets.size() - 1; i >= 0; i--) 
+        for (int i = bullets.size() - 1; i >= 0; i--)   // TODO: Check if this should be i > 0 or i >= 0
         {
             Bullet bullet = bullets.get(i);
+            System.out.println("Bullet movement and collisions of bullet at (x, y) = (" + bullet.x + ", " + bullet.y + ")");
+            // Destroy bullets out of bounds.
+            if (EntityIsOutOfBounds(bullet))
+            {
+                bullet.SetAsDead();
+                bullets.remove(i);
+                continue;
+            }
+            
             if (UpdateCollisions(bullet))   // This may set bullet as dead and remove it from bullets.
             {
                 alien_freeze = 16;
                 destroyed_aliens_counter ++;
             }
             bullet.Move();
+
         }
 
         // Player death logic.
         if (player.dead)
         {
-            current_game_state = GameStatesEnum.DeathAnimation;
+            EnterStateDeathAnimation();
         }
     }
 
@@ -298,7 +380,7 @@ public class SpaCEInvaders
     // If a bullet touches any other entity, set both as dead
     // Removes Bullet objects from bullets and adds both entities to current_destroyed_entities
     // If an Alien was hit, returns true.
-    private boolean UpdateCollisions(Bullet bullet)
+    private Boolean UpdateCollisions(Bullet bullet)
     {
         for (Entity entity : entities)
         {
@@ -306,7 +388,9 @@ public class SpaCEInvaders
             {
                 entity.SetAsDead();
                 bullet.SetAsDead();
+                System.out.print("entities collided. bullets.size() = " + bullets.size());
                 bullets.remove(bullet);
+                System.out.println(" -> bullets.size() = " + bullets.size());
                 current_destroyed_entities.add(entity);
                 current_destroyed_entities.add(bullet);
                 if (entity instanceof Alien) {return true;}
@@ -315,12 +399,37 @@ public class SpaCEInvaders
         return false;
     }
 
+    private Boolean EntityIsOutOfBounds(Entity entity)
+        {return entity.x < 0 || entity.x + entity.width > right_descend_limit || entity.y < 0 || entity.y + entity.height > 255;}
+
+    // // Detect if two Entity objects collide (intersection of rectangles).
+    // public Boolean EntitiesAreColliding(Entity entity_1, Entity entity_2) 
+    // {
+    //     int delta_y = entity_1.y - entity_2.y;
+    //     int delta_x = entity_1.x - entity_2.x;
+    //     // return (delta_y >= -1*entity_1.height && delta_y <= entity_2.height) && (delta_x >= -1*entity_1.width && delta_x <= entity_2.width);
+    //     return (-1*delta_x < entity_1.width && delta_x < entity_2.width && delta_y < entity_1.height && -1*delta_y < entity_2.height);
+    // }
     // Detect if two Entity objects collide (intersection of rectangles).
-    public boolean EntitiesAreColliding(Entity entity_1, Entity entity_2) 
+    public Boolean EntitiesAreColliding(Entity entity_1, Entity entity_2) 
     {
-        int delta_y = entity_1.y - entity_2.y;
-        int delta_x = entity_1.x - entity_2.x;
-        return (delta_y >= -1*entity_1.height && delta_y <= entity_2.height) && (delta_x >= -1*entity_1.width && delta_x <= entity_2.width);
+        // System.out.println("entity_1: (x, y, width, height)" + entity_1.x + ", " + entity_1.y + ", " + entity_1.width + ", " + entity_1.height);
+        // System.out.println("entity_2: (x, y, width, height)" + entity_2.x + ", " + entity_2.y + ", " + entity_2.width + ", " + entity_2.height);
+
+        Integer entity_1_opposite_x = entity_1.x + entity_1.width;
+        Integer entity_1_opposite_y = entity_1.y + entity_1.height;
+        Integer entity_2_opposite_x = entity_2.x + entity_2.width;
+        Integer entity_2_opposite_y = entity_2.y + entity_2.height;
+
+        Boolean x_intersect =   entity_2.x <= entity_1.x && entity_1.x <= entity_2_opposite_x ||
+                                entity_2.x <= entity_1_opposite_x && entity_1_opposite_x <= entity_2_opposite_x ||
+                                entity_1.x <= entity_2.x && entity_2.x <= entity_1_opposite_x ||
+                                entity_1.x <= entity_2_opposite_x && entity_2_opposite_x <= entity_1_opposite_x;
+        Boolean y_intersect =   entity_2.y <= entity_1.y && entity_1.y <= entity_2_opposite_y ||
+                                entity_2.y <= entity_1_opposite_y && entity_1_opposite_y <= entity_2_opposite_y ||
+                                entity_1.y <= entity_2.y && entity_2.y <= entity_1_opposite_y ||
+                                entity_1.y <= entity_2_opposite_y && entity_2_opposite_y <= entity_1_opposite_y;
+        return x_intersect && y_intersect;
     }
 
     // Have all bottom aliens decide whether to shoot and add the new shot Bullet objects to bullets.
@@ -331,7 +440,11 @@ public class SpaCEInvaders
         {
             // possibly_emitted_bullet is not null if the Alien decided to shoot.
             Bullet possibly_emitted_bullet = bottom_alien.ShootChance(player.x); 
-            if (possibly_emitted_bullet != null) {bullets.add(possibly_emitted_bullet);}
+            if (possibly_emitted_bullet != null)
+            {
+                bullets.add(possibly_emitted_bullet);
+                System.out.println("Alien shot at (x, y) =" + possibly_emitted_bullet.x + ", " + possibly_emitted_bullet.y);
+            }
         }
     }
     // SpaCEInvaders has a method EmitShots()
@@ -443,7 +556,6 @@ public class SpaCEInvaders
     // Waits some frames between destroying the last alien during GameLoop and start spawing the next round during SpawnAliens.
     // The graphic interface should draw a black rectangle moving from left to right of about a third of the screen wide
     // for the transition.
-    // Regenerates the bunkers. TODO!!!!!!!!!
     private void AdvanceFrameLoadNextRound()
     {
         // Revive some of the bunker blocks each frame.
@@ -480,6 +592,7 @@ public class SpaCEInvaders
     {
         if (current_game_state_frame_count >= GameStatesDuration.SpawnAliensFrameCount.frames)
         {
+            destroyed_aliens_counter = 0;
             EnterStateGameLoop();
         }
         int x = 18 + (current_game_state_frame_count%11)*16;
@@ -499,6 +612,13 @@ public class SpaCEInvaders
         current_game_state = GameStatesEnum.GameLoop;
         current_game_state_frame_count = 0;
         ReviveAndResetPlayer();
+    }
+
+    private void EnterStateDeathAnimation()
+    {
+        enter_game_state_event = "death_animation";
+        current_game_state = GameStatesEnum.DeathAnimation;
+        current_game_state_frame_count = 0;
     }
 
     private void AdvanceFrameDeathAnimation()
@@ -587,9 +707,10 @@ public class SpaCEInvaders
 
     private void ReviveAndResetPlayer()
     {
+        System.out.println("ReviveAndResetPlayer()");
         player.dead = false;
         player.x = 80;
-        player.y = 8;
+        player.y = 247;
     }
 
 

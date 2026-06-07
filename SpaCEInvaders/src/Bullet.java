@@ -33,8 +33,13 @@ public class Bullet extends Entity
     // e. g.: an alien bullet has 4 sprites, so sprite_count = 4.
     // sprite_count must not be 0.
 
+    // Dead bullet constructor. dead starts as true.
+    Bullet()
+    {
+        super();
+    }
 
-    Bullet(int x, int y, int move_distance, int move_cooldown, int sprite, boolean move_up, int sprite_count, int height)
+    Bullet(int x, int y, int move_distance, int move_cooldown, int sprite, boolean move_up, int sprite_count, int width, int height)
     {
         super();
         this.move_distance = move_distance;
@@ -48,7 +53,12 @@ public class Bullet extends Entity
         this.sprite_count = sprite_count;
         // this.sprite_offset = sprite_offset;
 
+        this.width = width;
+        this.height = height;
+
         death_animation = "bullet_death_animation";
+
+        dead = false;
 
     }
 
