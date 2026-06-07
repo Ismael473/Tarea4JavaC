@@ -6,13 +6,13 @@
 #include "ui/states.h"
 #include "ui/menu.h"
 #include "ui/handshake.h"
-#include "network/subscribe.h"
+#include "network/connection.h"
 
 pthread_t subscriptionThread;
 bool subscriptionAttempted = false;
 
 static void *SubscriptionThread(void *arg) {
-    bool ok = SubscribeToServer();
+    bool ok = ConnectionEstablish();
 
     App.client.subscriptionSuccess = ok;
     App.client.subscriptionFinished = true;

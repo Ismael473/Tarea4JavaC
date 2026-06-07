@@ -1,5 +1,6 @@
 #include "network/unsubscribe.h"
 #include "ui/states.h"
+#include "cJSON.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -16,7 +17,6 @@ bool UnsubscribeFromServer() {
 
     int sock;
     struct sockaddr_in serverAddr;
-    char request[BUFFER_SIZE];
 
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
@@ -40,21 +40,30 @@ bool UnsubscribeFromServer() {
         return false;
     }
 
-    snprintf(
-        request,
-        sizeof(request),
-        "{\"type\":\"unsubscribe\",\"clientId\":\"%s\"}\n",
-        App.client.uuid
-    );
+    cJSON *json = cJSON_CreateObject();
+    cJSON_AddStringToObject(json, "type", "unsubscribe");
+    cJSON_AddStringToObject(json, "clientId", App.client.uuid);
 
-    printf("Sending unsubscribe: %s", request);
+    char *request = cJSON_PrintUnformatted(json);
+    cJSON_Delete(json);
+
+    printf("Sending unsubscribe: %s\n", request);
 
     if (send(sock, request, strlen(request), 0) < 0) {
         perror("send");
+        cJSON_free(request);
         close(sock);
         return false;
     }
 
+    if (send(sock, "\n", 1, 0) < 0) {
+        perror("send newline");
+        cJSON_free(request);
+        close(sock);
+        return false;
+    }
+
+    cJSON_free(request);
     close(sock);
     return true;
 }

@@ -18,6 +18,7 @@ typedef struct {
 
 typedef struct {
     char uuid[37];
+    char roomId[37];
     bool subscribed;
     bool subscriptionFinished;
     bool subscriptionSuccess;

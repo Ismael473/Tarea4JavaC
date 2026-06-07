@@ -5,14 +5,63 @@
 #include "ui/button.h"
 #include "ui/text.h"
 #include "ui/rooms.h"
+#include "ui/game.h"
+#include "network/connection.h"
+#include "cJSON.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+
+static bool playRequested = false;
+static bool creatingRoom = false;
 
 void InitMenu() {
+    playRequested = false;
+    creatingRoom = false;
 }
 
 void UpdateMenu() {
     UpdateStars();
+
+    if (creatingRoom) {
+        cJSON *json = cJSON_CreateObject();
+        cJSON_AddStringToObject(json, "type", "create_room");
+        cJSON_AddStringToObject(json, "clientId", App.client.uuid);
+        char *createReq = cJSON_PrintUnformatted(json);
+        cJSON_Delete(json);
+
+        char response[4096];
+        if (createReq && ConnectionSendAndReadResponse(createReq, response, sizeof(response))) {
+            printf("create_room response: %s\n", response);
+            fflush(stdout);
+
+            cJSON *root = cJSON_Parse(response);
+            if (root) {
+                cJSON *roomId = cJSON_GetObjectItem(root, "roomId");
+                if (roomId) {
+                    strncpy(App.client.roomId, roomId->valuestring, sizeof(App.client.roomId) - 1);
+                    App.client.roomId[sizeof(App.client.roomId) - 1] = '\0';
+                }
+                cJSON_Delete(root);
+            }
+
+            ConnectionStartReader();
+            InitGame();
+            creatingRoom = false;
+            App.currentScreen = GAME_SCREEN;
+        } else {
+            creatingRoom = false;
+            playRequested = false;
+            printf("Failed to create room\n");
+            fflush(stdout);
+        }
+
+        if (createReq) cJSON_free(createReq);
+    }
+
+    if (playRequested && !creatingRoom) {
+        creatingRoom = true;
+    }
 }
 
 void DrawMenu() {
@@ -29,18 +78,18 @@ void DrawMenu() {
 
     Button PlayButton = {
         .bounds = {(GetScreenWidth() / 2) - 100, (GetScreenHeight() / 2) + 20, 200, 60},
-        .text = "Jugar",
+        .text = creatingRoom ? "..." : "Jugar",
         .fontSize = 20,
         .spacing = 2,
-        .textColor = WHITE,
-        .standbyColor = LIME,
+        .textColor = creatingRoom ? GRAY : WHITE,
+        .standbyColor = creatingRoom ? DARKGRAY : LIME,
         .hoverColor = GRAY
     };
 
     bool pressed = DrawButton(PlayButton);
 
-    if (pressed) {
-        App.currentScreen = GAME_SCREEN;
+    if (pressed && !creatingRoom) {
+        playRequested = true;
     }
 
     Button SpecButton = {
@@ -48,14 +97,14 @@ void DrawMenu() {
         .text = "Espectar",
         .fontSize = 20,
         .spacing = 2,
-        .textColor = WHITE,
+        .textColor = creatingRoom ? GRAY : WHITE,
         .standbyColor = LIME,
         .hoverColor = GRAY
     };
 
     pressed = DrawButton(SpecButton);
 
-    if (pressed) {
+    if (pressed && !creatingRoom) {
         App.currentScreen = ROOMS_SCREEN;
         InitRooms();
     }
@@ -72,7 +121,7 @@ void DrawMenu() {
 
     pressed = DrawButton(ExitButton);
 
-    if (pressed) {
+    if (pressed && !creatingRoom) {
         App.shouldClose = true;
     }
 

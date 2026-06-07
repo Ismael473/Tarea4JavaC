@@ -8,6 +8,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.UUID;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -47,27 +48,58 @@ public class Server {
     }
 
     private void handleClient(Socket clientSocket) throws IOException {
-        try (BufferedReader in = new BufferedReader(
+        BufferedReader in = new BufferedReader(
                 new InputStreamReader(clientSocket.getInputStream())
         );
-        PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
-            String line = in.readLine();
-            if (line == null) {
-                return;
+        PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+
+        ConnectionContext connection = new ConnectionContext(clientSocket, out);
+
+        try {
+            String line;
+            while ((line = in.readLine()) != null) {
+                // LOG.debug("Request received: {}", line);
+
+                try {
+                    JsonObject jsonObject = JsonParser.parseString(line).getAsJsonObject();
+                    String type = jsonObject.get("type").getAsString();
+
+                    if (type.equals("subscribe")) {
+                        UUID clientId = UUID.fromString(jsonObject.get("clientId").getAsString());
+                        connection.setClientId(clientId);
+                    }
+
+                    Command command = commandFactory.create(type);
+                    command.execute(jsonObject, connection, serverContext);
+
+                } catch (Exception ex) {
+                    LOG.error("Error handling command: {}", ex.getMessage(), ex);
+                    JsonObject errorResponse = new JsonObject();
+                    errorResponse.addProperty("type", "error");
+                    errorResponse.addProperty("message", ex.getMessage());
+                    out.println(serverContext.getGson().toJson(errorResponse));
+                }
             }
-
-            LOG.debug("Request received: {}", line);
-
-            JsonObject jsonObject = JsonParser.parseString(line).getAsJsonObject();
-            String type = jsonObject.get("type").getAsString();
-
-            Command command = commandFactory.create(type);
-            ConnectionContext connection = new ConnectionContext(clientSocket, out);
-            command.execute(jsonObject, connection, serverContext);
-
-        } catch (Exception ex) {
-            LOG.error(ex.getMessage(), ex);
+        } catch (IOException e) {
+            LOG.error("Connection error with {}: {}", clientSocket.getInetAddress(), e.getMessage());
+        } finally {
+            cleanupClient(connection);
+            try {
+                clientSocket.close();
+            } catch (IOException e) {
+                LOG.error("Error closing socket: {}", e.getMessage());
+            }
         }
+    }
+
+    private void cleanupClient(ConnectionContext connection) {
+        UUID clientId = connection.getClientId();
+        if (clientId == null) return;
+
+        LOG.info("Cleaning up client {} from server state", clientId);
+
+        serverContext.getClients().remove(clientId);
+        serverContext.getRoomManager().removeClientFromRoom(clientId);
     }
 
     public void startDiscovery() {

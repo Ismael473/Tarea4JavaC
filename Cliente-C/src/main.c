@@ -9,12 +9,12 @@
 #include "ui/game.h"
 
 #include <uuid/uuid.h>
-#include "network/unsubscribe.h"
+#include "network/connection.h"
 
 
 int main() {
     SetConfigFlags(FLAG_MSAA_4X_HINT);
-    InitWindow(800, 450, "SpaCE Invaders");
+    InitWindow(800, 550, "SpaCE Invaders");
     SetTargetFPS(60);
 
     uuid_t uuid;
@@ -79,7 +79,7 @@ int main() {
         EndDrawing();
     }
 
-    UnsubscribeFromServer();
+    ConnectionClose();
 
     UnloadTexture(App.assets.logo);
     UnloadFont(App.assets.mainFont);

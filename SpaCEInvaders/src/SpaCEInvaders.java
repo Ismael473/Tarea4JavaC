@@ -57,7 +57,7 @@ public class SpaCEInvaders
     
     // Bunkers
     Integer bunker_count = 4;
-    Integer bunkers_start_x = 14;
+    Integer bunkers_start_x = 40;
     Integer bunkers_spacing_x = (right_descend_limit - bunkers_start_x)/bunker_count;
     Integer bunkers_starting_y = 20;
     Bunker[] bunkers = new Bunker[bunker_count]; // (There are 55 Aliens at the start of a game) 

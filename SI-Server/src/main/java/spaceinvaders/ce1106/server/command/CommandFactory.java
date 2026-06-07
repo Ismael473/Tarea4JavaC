@@ -5,6 +5,10 @@ public class CommandFactory {
         return switch (type) {
             case "subscribe" -> new SubscribeCommand();
             case "unsubscribe" -> new UnsubscribeCommand();
+            case "create_room" -> new CreateRoomCommand();
+            case "join_room" -> new JoinRoomCommand();
+            case "input" -> new InputCommand();
+            case "leave_room" -> new LeaveRoomCommand();
             default -> new UnknownCommand();
         };
     }

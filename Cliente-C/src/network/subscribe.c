@@ -1,5 +1,6 @@
 #include "network/subscribe.h"
 #include "ui/states.h"
+#include "cJSON.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -110,7 +111,6 @@ bool SubscribeToServer() {
 
     int sock;
     struct sockaddr_in serverAddr;
-    char request[BUFFER_SIZE];
     char response[BUFFER_SIZE];
 
     sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -135,20 +135,30 @@ bool SubscribeToServer() {
         return false;
     }
 
-    snprintf(
-        request,
-        sizeof(request),
-        "{\"type\":\"subscribe\",\"clientId\":\"%s\"}\n",
-        App.client.uuid
-    );
+    cJSON *json = cJSON_CreateObject();
+    cJSON_AddStringToObject(json, "type", "subscribe");
+    cJSON_AddStringToObject(json, "clientId", App.client.uuid);
 
-    printf("Sending handshake: %s", request);
+    char *request = cJSON_PrintUnformatted(json);
+    cJSON_Delete(json);
+
+    printf("Sending handshake: %s\n", request);
 
     if (send(sock, request, strlen(request), 0) < 0) {
         perror("send");
+        cJSON_free(request);
         close(sock);
         return false;
     }
+
+    if (send(sock, "\n", 1, 0) < 0) {
+        perror("send newline");
+        cJSON_free(request);
+        close(sock);
+        return false;
+    }
+
+    cJSON_free(request);
 
     int received = recv(sock, response, sizeof(response) - 1, 0);
     if (received < 0) {
@@ -169,5 +179,15 @@ bool SubscribeToServer() {
 
     close(sock);
 
-    return strstr(response, "\"status\":\"ok\"") != NULL;
+    cJSON *root = cJSON_Parse(response);
+    if (!root) {
+        printf("Failed to parse server response\n");
+        return false;
+    }
+
+    cJSON *status = cJSON_GetObjectItem(root, "status");
+    bool ok = status != NULL && strcmp(status->valuestring, "ok") == 0;
+
+    cJSON_Delete(root);
+    return ok;
 }
