@@ -8,6 +8,8 @@
 
 typedef struct {
     char name[256];
+    char roomId[37];
+    int playerCount;
     int spectatorCount;
 } Room;
 
@@ -20,7 +22,8 @@ typedef struct {
 } RoomList;
 
 void InitRoomList(RoomList *list, Rectangle bounds);
-void AddRoom(RoomList *list, const char *name, int spectatorCount);
+void AddRoom(RoomList *list, const char *name, const char *roomId, int playerCount, int spectatorCount);
+void ClearRoomList(RoomList *list);
 int DrawRoomList(RoomList *list);
 
 #endif

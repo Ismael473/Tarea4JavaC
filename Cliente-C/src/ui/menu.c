@@ -45,7 +45,6 @@ void UpdateMenu() {
                 cJSON_Delete(root);
             }
 
-            ConnectionStartReader();
             InitGame();
             creatingRoom = false;
             App.currentScreen = GAME_SCREEN;

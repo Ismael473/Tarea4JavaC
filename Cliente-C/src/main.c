@@ -7,6 +7,7 @@
 #include "ui/handshake.h"
 #include "ui/rooms.h"
 #include "ui/game.h"
+#include "ui/spectate.h"
 
 #include <uuid/uuid.h>
 #include "network/connection.h"
@@ -48,6 +49,9 @@ int main() {
         case GAME_SCREEN:
             UpdateGame();
             break;
+        case SPECTATE_SCREEN:
+            UpdateSpectate();
+            break;
         default:
             break;
         }
@@ -71,6 +75,9 @@ int main() {
             break;
         case GAME_SCREEN:
             DrawGame();
+            break;
+        case SPECTATE_SCREEN:
+            DrawSpectate();
             break;
         default:
             break;

@@ -24,6 +24,11 @@ static volatile bool readerStarted = false;
 static char latestFrame[CONN_BUFFER_SIZE];
 static pthread_mutex_t frameMutex = PTHREAD_MUTEX_INITIALIZER;
 
+static char latestResponse[LINE_BUF];
+static pthread_mutex_t responseMutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t responseCond = PTHREAD_COND_INITIALIZER;
+static volatile bool waitingForResponse = false;
+
 static void Debug(const char *msg) {
     printf("[CONN] %s\n", msg);
     fflush(stdout);
@@ -162,6 +167,7 @@ bool ConnectionEstablish(void) {
     SetReadTimeout(connSock, 0);
     App.client.subscribed = true;
     Debug("Connection established successfully");
+    ConnectionStartReader();
     return true;
 }
 
@@ -173,50 +179,58 @@ bool ConnectionSend(const char *json) {
 bool ConnectionSendAndReadResponse(const char *json, char *response, int responseSize) {
     if (connSock < 0) { Debug("SendAndRead: no connection"); return false; }
 
-    SetReadTimeout(connSock, 5);
-
     if (!SendString(connSock, json)) {
         Debug("SendAndRead: send failed");
-        SetReadTimeout(connSock, 0);
         return false;
     }
 
-    int attempts = 0;
-    while (attempts < 50) {
-        attempts++;
-        if (ReadLine(connSock, response, responseSize) < 0) {
-            Debug("SendAndRead: read failed");
-            SetReadTimeout(connSock, 0);
-            return false;
-        }
+    // Signal the reader thread to capture the next response
+    pthread_mutex_lock(&responseMutex);
+    latestResponse[0] = '\0';
+    waitingForResponse = true;
+    pthread_mutex_unlock(&responseMutex);
 
-        // printf("[CONN] Response line: %s\n", response);
-        // fflush(stdout);
+    // Wait for the reader thread to signal that a response arrived
+    pthread_mutex_lock(&responseMutex);
+    struct timespec deadline;
+    clock_gettime(CLOCK_REALTIME, &deadline);
+    deadline.tv_sec += 10;
 
-        cJSON *root = cJSON_Parse(response);
-        if (!root) continue;
-
-        cJSON *status = cJSON_GetObjectItem(root, "status");
-        cJSON *type = cJSON_GetObjectItem(root, "type");
-        bool hasStatus = (status != NULL);
-        bool isError = (type != NULL && strcmp(type->valuestring, "error") == 0);
-        cJSON_Delete(root);
-
-        if (isError) {
-            Debug("SendAndRead: server returned error");
-            SetReadTimeout(connSock, 0);
-            return false;
-        }
-
-        if (hasStatus) {
-            SetReadTimeout(connSock, 0);
-            return true;
+    bool gotResponse = false;
+    while (waitingForResponse) {
+        int rc = pthread_cond_timedwait(&responseCond, &responseMutex, &deadline);
+        if (rc == ETIMEDOUT) {
+            Debug("SendAndRead: timed out waiting for response");
+            waitingForResponse = false;
+            break;
         }
     }
+    gotResponse = !waitingForResponse;
 
-    Debug("SendAndRead: too many attempts");
-    SetReadTimeout(connSock, 0);
-    return false;
+    if (gotResponse) {
+        strncpy(response, latestResponse, responseSize - 1);
+        response[responseSize - 1] = '\0';
+    }
+    pthread_mutex_unlock(&responseMutex);
+
+    if (!gotResponse) {
+        Debug("SendAndRead: too many attempts");
+        return false;
+    }
+
+    // Check if it's an error response
+    cJSON *root = cJSON_Parse(response);
+    if (root) {
+        cJSON *type = cJSON_GetObjectItem(root, "type");
+        if (type != NULL && strcmp(type->valuestring, "error") == 0) {
+            Debug("SendAndRead: server returned error");
+            cJSON_Delete(root);
+            return false;
+        }
+        cJSON_Delete(root);
+    }
+
+    return true;
 }
 
 static void *ReaderThreadFunc(void *arg) {
@@ -229,10 +243,23 @@ static void *ReaderThreadFunc(void *arg) {
             break;
         }
 
-    cJSON *root = cJSON_Parse(line);
-    if (!root) continue;
+        cJSON *root = cJSON_Parse(line);
+        if (!root) continue;
 
         cJSON *enemies = cJSON_GetObjectItem(root, "enemies");
+
+        if (waitingForResponse && !enemies) {
+            pthread_mutex_lock(&responseMutex);
+            strncpy(latestResponse, line, sizeof(latestResponse) - 1);
+            latestResponse[sizeof(latestResponse) - 1] = '\0';
+            waitingForResponse = false;
+            pthread_cond_signal(&responseCond);
+            pthread_mutex_unlock(&responseMutex);
+            cJSON_Delete(root);
+            continue;
+        }
+
+
         if (enemies) {
             pthread_mutex_lock(&frameMutex);
             strncpy(latestFrame, line, sizeof(latestFrame) - 1);

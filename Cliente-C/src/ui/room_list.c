@@ -11,15 +11,31 @@ void InitRoomList(RoomList *list, Rectangle bounds) {
     list->itemHeight = 40;
 }
 
-void AddRoom(RoomList *list, const char *name, int spectatorCount) {
+void AddRoom(RoomList *list, const char *name, const char *roomId, int playerCount, int spectatorCount) {
     if (list->roomCount >= MAX_ROOMS) {
         return;
     }
 
     Room *room = &list->rooms[list->roomCount++];
-    strncpy(room->name, name, sizeof(room->name) - 1);
-    room->name[sizeof(room->name) - 1] = '\0';
+    if (name) {
+        strncpy(room->name, name, sizeof(room->name) - 1);
+        room->name[sizeof(room->name) - 1] = '\0';
+    } else {
+        room->name[0] = '\0';
+    }
+    if (roomId) {
+        strncpy(room->roomId, roomId, sizeof(room->roomId) - 1);
+        room->roomId[sizeof(room->roomId) - 1] = '\0';
+    } else {
+        room->roomId[0] = '\0';
+    }
+    room->playerCount = playerCount;
     room->spectatorCount = spectatorCount;
+}
+
+void ClearRoomList(RoomList *list) {
+    list->roomCount = 0;
+    list->scrollOffset = 0;
 }
 
 int DrawRoomList(RoomList *list) {
@@ -82,7 +98,7 @@ int DrawRoomList(RoomList *list) {
         );
 
         char info[64];
-        snprintf(info, sizeof(info), "%d espectadores", list->rooms[i].spectatorCount);
+        snprintf(info, sizeof(info), "%dj %de", list->rooms[i].playerCount, list->rooms[i].spectatorCount);
 
         Vector2 infoSize = MeasureTextEx(App.assets.mainFont, info, 20, 2);
         DrawTextEx(

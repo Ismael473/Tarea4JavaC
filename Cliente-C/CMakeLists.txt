@@ -20,6 +20,7 @@ add_executable(game
     src/ui/room_list.c
     src/ui/rooms.c
     src/ui/game.c
+    src/ui/spectate.c
     lib/cJSON.c
 )
 

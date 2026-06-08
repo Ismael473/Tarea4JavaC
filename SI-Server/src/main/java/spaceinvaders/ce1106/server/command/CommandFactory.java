@@ -9,6 +9,7 @@ public class CommandFactory {
             case "join_room" -> new JoinRoomCommand();
             case "input" -> new InputCommand();
             case "leave_room" -> new LeaveRoomCommand();
+            case "list_rooms" -> new ListRoomsCommand();
             default -> new UnknownCommand();
         };
     }

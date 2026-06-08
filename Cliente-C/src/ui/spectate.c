@@ -1,4 +1,4 @@
-#include "ui/game.h"
+#include "ui/spectate.h"
 #include "ui/stars.h"
 #include "ui/states.h"
 #include "ui/menu.h"
@@ -94,7 +94,7 @@ static void DrawSprite(Texture2D tex, int gameX, int gameY) {
     DrawTextureEx(tex, pos, 0, GAME_SCALE, WHITE);
 }
 
-void InitGame() {
+void InitSpectate() {
     GAME_OFFSET_X = (GetScreenWidth() - (int)(256 * GAME_SCALE)) / 2 + 40;
     GAME_OFFSET_Y = (GetScreenHeight() - (int)(256 * GAME_SCALE)) / 2;
     for (int i = 0; i < MAX_SPRITE_ID; i++) {
@@ -111,25 +111,8 @@ void InitGame() {
     deathEffectCount = 0;
 }
 
-void UpdateGame() {
+void UpdateSpectate() {
     UpdateStars();
-
-    bool left = IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT);
-    bool right = IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT);
-    bool shoot = IsKeyDown(KEY_W) || IsKeyDown(KEY_SPACE) || IsKeyDown(KEY_UP);
-
-    cJSON *input = cJSON_CreateObject();
-    cJSON_AddStringToObject(input, "type", "input");
-    cJSON_AddStringToObject(input, "clientId", App.client.uuid);
-    cJSON_AddBoolToObject(input, "left", left);
-    cJSON_AddBoolToObject(input, "right", right);
-    cJSON_AddBoolToObject(input, "shoot", shoot);
-    char *inputStr = cJSON_PrintUnformatted(input);
-    cJSON_Delete(input);
-    if (inputStr) {
-        ConnectionSend(inputStr);
-        cJSON_free(inputStr);
-    }
 
     const char *frame = ConnectionGetLatestFrame();
     if (!frame || frame[0] == '\0') return;
@@ -196,10 +179,6 @@ void UpdateGame() {
         }
     }
 
-    // printf("[GAME] Frame: score=%d lives=%d event=%s entities=%d\n",
-    //        currentFrame.score, currentFrame.lives, currentFrame.event, currentFrame.entityCount);
-    // fflush(stdout);
-
     for (int i = deathEffectCount - 1; i >= 0; i--) {
         deathEffects[i].timer--;
         if (deathEffects[i].timer <= 0) {
@@ -225,7 +204,7 @@ void UpdateGame() {
     }
 }
 
-void DrawGame() {
+void DrawSpectate() {
     ClearBackground(BLACK);
     DrawStars();
 
@@ -234,7 +213,6 @@ void DrawGame() {
         int spriteId = ent->sprite;
         if (spriteId < 0 || spriteId >= MAX_SPRITE_ID) continue;
 
-        // skip entities that are currently playing a death effect
         bool isDying = false;
         for (int j = 0; j < deathEffectCount; j++) {
             if (deathEffects[j].x == ent->x && deathEffects[j].y == ent->y &&
@@ -294,6 +272,17 @@ void DrawGame() {
     };
     DrawUIText(livesLabel);
 
+    Text spectatingLabel = {
+        .text = "ESPECTANDO",
+        .position = (Vector2){GetScreenWidth() / 2, 46},
+        .fontSize = 12,
+        .spacing = 2,
+        .color = (Color){ 200, 200, 50, 255 },
+        .anchor = TEXT_ANCHOR_TOP_CENTER,
+        .opacity = 1.0f
+    };
+    DrawUIText(spectatingLabel);
+
     if (currentFrame.eventTimer > 0) {
         if (strcmp(currentFrame.event, "game_over") == 0) {
             const char *msg = "GAME OVER";
@@ -345,7 +334,7 @@ void DrawGame() {
     }
 
     if (!currentFrame.started && currentFrame.eventTimer == 0) {
-        const char *msg = "Presiona una tecla para comenzar";
+        const char *msg = "Esperando jugadores...";
         int fontSize = 16;
         int textWidth = MeasureTextEx(App.assets.mainFont, msg, fontSize, 2).x;
         Text menuText = {

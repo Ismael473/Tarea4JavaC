@@ -263,6 +263,7 @@ public class SpaCEInvaders
         {
             System.out.println("AdvanceFrame(): Win condition met! destroyed_aliens_counter = " + destroyed_aliens_counter);
             EnterStateWinAnimation();
+            return;
         }
 
         // Alien movement
@@ -486,6 +487,7 @@ public class SpaCEInvaders
     // offset must start at 0.
     Alien GetRightmostAlien(int offset)
     {
+        if (offset > 10) {return null;}
         if (!aliens[10-offset].dead) {return aliens[10-offset];}
         if (!aliens[21-offset].dead) {return aliens[21-offset];}
         if (!aliens[32-offset].dead) {return aliens[32-offset];}
@@ -497,6 +499,7 @@ public class SpaCEInvaders
     // Similar to GetRightmostAlien()
     Alien GetLeftmostAlien(int offset)
     {
+        if (offset > 10) {return null;}
         if (!aliens[0+offset].dead) {return aliens[0+offset];}
         if (!aliens[11+offset].dead) {return aliens[11+offset];}
         if (!aliens[22+offset].dead) {return aliens[22+offset];}
@@ -531,12 +534,14 @@ public class SpaCEInvaders
         if (direction)  // True means left.
         {
             Alien leftmost_alien = GetLeftmostAlien(0);
+            if (leftmost_alien == null) {return false;}
             System.out.println("DescentCondition(): leftmost_alien.(x,y) = (" + leftmost_alien.x + ", " + leftmost_alien.y);
             if (leftmost_alien.x <= left_descend_limit) {return true;}
         }
             else
         {
             Alien rightmost_alien = GetRightmostAlien(0);
+            if (rightmost_alien == null) {return false;}
             System.out.println("DescentCondition(): rightmost_alien.(x,y) = (" + rightmost_alien.x + ", " + rightmost_alien.y);
             if (rightmost_alien.x >= right_descend_limit) {return true;}
         }
