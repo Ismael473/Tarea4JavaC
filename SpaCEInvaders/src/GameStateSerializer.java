@@ -1,4 +1,4 @@
-// Json serializer code by ChatGPT.
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -8,10 +8,7 @@ import java.util.ArrayList;
 
 public class GameStateSerializer
 {
-    private static final Gson gson =
-            new GsonBuilder()
-                    .setPrettyPrinting()
-                    .create();
+    private static final Gson gson = new GsonBuilder().create();
 
     public String createGameStateJson(Integer score, Integer lives, String enter_game_state_event, Entity[] entities, ArrayList<Bullet> bullets)
     {
@@ -24,13 +21,12 @@ public class GameStateSerializer
         JsonArray drawn_entities = new JsonArray();
         for (Entity entity : entities)
         {
-            if (!entity.dead)
+            if (!entity.dead || entity.died_this_frame)
             {
-                // System.out.println("entity (x, y, sprite, dead) = (" + entity.x + ", " + entity.y + ", " + entity.sprite + ", " + entity.dead + ")");
                 JsonObject entity_to_add = new JsonObject();
                 entity_to_add.addProperty("x", entity.x);
                 entity_to_add.addProperty("y", entity.y);
-                entity_to_add.addProperty("sprite", entity.sprite);
+                entity_to_add.addProperty("sprite", entity.sprite + entity.sprite_offset);
                 if (entity.died_this_frame) {entity_to_add.addProperty("animation", entity.death_animation);}
                 else                        {entity_to_add.addProperty("animation", "");}
                 drawn_entities.add(entity_to_add);
@@ -39,26 +35,18 @@ public class GameStateSerializer
         }
         for (Entity entity : bullets)
         {
-            if (!entity.dead)
+            if (!entity.dead || entity.died_this_frame)
             {
-                System.out.println("bullet (x, y, sprite, dead) = (" + entity.x + ", " + entity.y + ", " + entity.sprite + ", " + entity.dead + ")");
                 JsonObject entity_to_add = new JsonObject();
                 entity_to_add.addProperty("x", entity.x);
                 entity_to_add.addProperty("y", entity.y);
-                entity_to_add.addProperty("sprite", entity.sprite);
+                entity_to_add.addProperty("sprite", entity.sprite + entity.sprite_offset);
                 if (entity.died_this_frame) {entity_to_add.addProperty("animation", entity.death_animation);}
                 else                        {entity_to_add.addProperty("animation", "");}
                 drawn_entities.add(entity_to_add);
             }
             
         }
-
-        // JsonObject enemy2 = new JsonObject();
-        // enemy2.addProperty("x", 456);
-        // enemy2.addProperty("y", 456);
-        // enemy2.addProperty("sprite", 456);
-        // enemy2.addProperty("animation", "");
-        // enemies.add(enemy2);
 
         root.add("enemies", drawn_entities);
 

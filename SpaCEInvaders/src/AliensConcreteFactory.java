@@ -1,3 +1,4 @@
+
 public class AliensConcreteFactory extends AliensAbstractFactory
 {
     String death_animation = "alien_death_animation";
