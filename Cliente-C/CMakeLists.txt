@@ -22,6 +22,7 @@ add_executable(game
     src/ui/game.c
     src/ui/spectate.c
     lib/cJSON.c
+    src/control/control.c
 )
 
 file(COPY assets DESTINATION ${CMAKE_BINARY_DIR})

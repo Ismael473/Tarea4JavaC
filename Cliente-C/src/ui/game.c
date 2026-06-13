@@ -8,6 +8,8 @@
 #include "raylib.h"
 #include <string.h>
 #include <stdio.h>
+#include "control/control.h"
+
 
 #define MAX_SPRITE_ID 29
 #define MAX_FRAME_ENTITIES 256
@@ -114,9 +116,25 @@ void InitGame() {
 void UpdateGame() {
     UpdateStars();
 
-    bool left = IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT);
-    bool right = IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT);
-    bool shoot = IsKeyDown(KEY_W) || IsKeyDown(KEY_SPACE) || IsKeyDown(KEY_UP);
+    char c = ControllerGetInput();
+    printf("%c\n", c);
+
+    static double lastSerialLeft = -999.0;
+    static double lastSerialRight = -999.0;
+    static double lastSerialShoot = -999.0;
+    double now = GetTime();
+
+    if (c == 'S') lastSerialLeft = now;
+    if (c == 'D') lastSerialRight = now;
+    if (c == 'N') lastSerialShoot = now;
+
+    bool serialLeft = (now - lastSerialLeft) < 0.2;
+    bool serialRight = (now - lastSerialRight) < 0.2;
+    bool serialShoot = (now - lastSerialShoot) < 0.2;
+
+    bool left = IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT) || serialLeft;
+    bool right = IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT) || serialRight;
+    bool shoot = IsKeyDown(KEY_W) || IsKeyDown(KEY_SPACE) || IsKeyDown(KEY_UP) || serialShoot;
 
     cJSON *input = cJSON_CreateObject();
     cJSON_AddStringToObject(input, "type", "input");

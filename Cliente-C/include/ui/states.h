@@ -23,6 +23,9 @@ typedef struct {
     bool subscribed;
     bool subscriptionFinished;
     bool subscriptionSuccess;
+    volatile char lastChar;
+    int serialPort;
+    bool controlThreadShouldClose;
 } AppClient;
 
 typedef struct {

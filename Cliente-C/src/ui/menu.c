@@ -11,6 +11,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "control/control.h"
+
 
 static bool playRequested = false;
 static bool creatingRoom = false;
@@ -89,6 +91,8 @@ void DrawMenu() {
 
     if (pressed && !creatingRoom) {
         playRequested = true;
+        App.client.controlThreadShouldClose = false;
+        ControllerInit();
     }
 
     Button SpecButton = {
