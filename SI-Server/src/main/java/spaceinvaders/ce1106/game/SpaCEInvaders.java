@@ -25,9 +25,11 @@ public class SpaCEInvaders
     int destroyed_aliens_counter = 0;
     int alien_freeze = 0;   // Timer to stop Alien movement. This is used when an alien is destroyed.
 
+    Integer alien_landing_height = 206;
+
     UFO ufo;
     Integer ufo_starting_position_x = 0;
-    Integer ufo_starting_position_y = 0;
+    Integer ufo_starting_position_y = 40;
 
     // Player
     // Singleton singleton receives the inputs
@@ -245,6 +247,14 @@ public class SpaCEInvaders
         System.out.println("(left, right, shoot, player_dead?, player_bullet_dead?) = " + singleton.left_is_pressed + ", " + singleton.right_is_pressed + ", " + singleton.shoot_is_pressed + ", " + player.dead + ", " + player_bullet.dead);
         System.out.println("bullets.size() = " + bullets.size());
         System.out.println("player (x, y, sprite, dead) = (" + player.x + ", " + player.y + ", " + player.sprite + ", " + player.dead + ")");
+        System.out.println("ufo (x, y, sprite, dead) = (" + ufo.x + ", " + ufo.y + ", " + ufo.sprite + ", " + ufo.dead + ")");
+
+//        These prints crash if there are no more aliens.
+        // System.out.println("GetLeftmostAlien(0) (x, y, sprite, dead) = (" + GetLeftmostAlien(0).x + ", " + GetLeftmostAlien(0).y + ", " + GetLeftmostAlien(0).sprite + ", " + GetLeftmostAlien(0).dead + ")");
+        // System.out.println("GetRightmostAlien(0) (x, y, sprite, dead) = (" + GetRightmostAlien(0).x + ", " + GetRightmostAlien(0).y + ", " + GetRightmostAlien(0).sprite + ", " + GetRightmostAlien(0).dead + ")");
+
+        System.out.println("current_moving_alien = " + current_moving_alien);
+
         System.out.println();
 
         // for (Bullet bullet : bullets)
@@ -273,10 +283,19 @@ public class SpaCEInvaders
         ClearRecentDeaths();
 
         // Win condition
-        if (destroyed_aliens_counter >= aliens.length)
+        // if (destroyed_aliens_counter >= aliens.length)
+        // (current_moving_alien == 0 && GetNextAlien() == null) means that no next Alien could be found.
+        if (current_moving_alien == 0)
         {
-            System.out.println("AdvanceFrame(): Win condition met! destroyed_aliens_counter = " + destroyed_aliens_counter);
-            EnterStateWinAnimation();
+            if (GetNextAlien() == null) // This modifies current_moving_alien
+            {
+                System.out.println("AdvanceFrame(): Win condition met! destroyed_aliens_counter = " + destroyed_aliens_counter);
+                EnterStateWinAnimation();
+                current_moving_alien = 0;
+                return;
+            }
+            // This resets current_moving_alien as 0 so that the game knows that all aliens have moved once again.
+            else {current_moving_alien = 0;}
         }
 
         // Alien movement
@@ -293,7 +312,7 @@ public class SpaCEInvaders
 
         // Player movement and shooting
         if (singleton.left_is_pressed && player.x >= left_descend_limit)  {player.Move(true);}
-        if (singleton.right_is_pressed && player.x <= right_descend_limit) {player.Move(false);}
+        if (singleton.right_is_pressed && player.x + player.width <= right_descend_limit) {player.Move(false);}
         if (singleton.shoot_is_pressed)
         {
             Bullet possible_player_bullet = player.SpawnBullet();
@@ -322,7 +341,7 @@ public class SpaCEInvaders
             if (UpdateCollisions(bullet))   // This may set bullet as dead and remove it from bullets.
             {
                 alien_freeze = 16;
-                destroyed_aliens_counter ++;
+                destroyed_aliens_counter ++;    // This increases even when destroying the ufo.
             }
             bullet.Move();
 
@@ -338,6 +357,10 @@ public class SpaCEInvaders
         {
             EnterStateDeathAnimation();
         }
+
+        // Game Over from Alien landing.
+        // This ignores lives.
+        if (AlienLandingGameOverCondition()) {EnterStateGameOver();}
     }
 
     private void MoveAliens()
@@ -421,6 +444,7 @@ public class SpaCEInvaders
                 current_destroyed_entities.add(entity);
                 current_destroyed_entities.add(bullet);
                 if (entity instanceof Alien) {return true;}
+//                if (entity instanceof Alien && !(entity instanceof UFO)) {return true;}   // Ignore the UFO?
                 return  false;
             }
         }
@@ -582,11 +606,6 @@ public class SpaCEInvaders
         current_game_state_frame_count = -1;
     }
 
-//    private void DestroyAllBullets()
-//    {
-//     TODO
-//    }
-
     // LoadNextRound logic.
     // Waits some frames between destroying the last alien during GameLoop and start spawing the next round during SpawnAliens.
     // The graphic interface should draw a black rectangle moving from left to right of about a third of the screen wide
@@ -604,7 +623,7 @@ public class SpaCEInvaders
         for (int i = current_frame_bottom_limit; i <= current_frame_top_limit; i++)
         {
             // if bunker_blocks_offset + i is a valid index in entities, revive the BunkerBlock at i.
-            if (bunker_blocks_offset + i < entities.length){entities[bunker_blocks_offset + i].dead = false;}
+            if (bunker_blocks_offset + i < entities.length - 1){entities[bunker_blocks_offset + i].dead = false;}
         }
         if (current_game_state_frame_count >= GameStatesDuration.LoadNextRoundFrameCount.frames)
         {
@@ -748,12 +767,28 @@ public class SpaCEInvaders
     private void AdvanceFrameWinAnimation()
     {
         // 0 <= current_game_state_frame_count < 45     (i. e. 45 frames).
-            // Simply freezes the game for a short duration.
+            // Freezes the game for a short duration.
+            // Destroys all bullets and sets the ufo as dead.
         if (current_game_state_frame_count > 45)   // The player regains control one frame after reviving.
         {
+            DestroyAllBullets();
+            ufo.dead = true;
+            lives ++;
             EnterStateLoadNextRound();
         }     
     }
+
+    private void DestroyAllBullets()
+    {
+        // Uses a backwards for loop for deleting bullets while iterating the list.
+        for (int i = bullets.size() - 1; i >= 0; i--)
+        {
+            Bullet bullet = bullets.get(i);
+            bullet.SetAsDead();
+            bullets.remove(i);
+        }
+    }
+
 
     private void ReviveAndResetPlayer()
     {
@@ -773,8 +808,21 @@ public class SpaCEInvaders
 
     private Boolean UFOSpawnCondition()
     {
-        return current_game_state_frame_count == 600;
+        // TODO: Make this spawn condition true when the user inputs the respective command from the command window.
+        return current_game_state == GameStatesEnum.GameLoop && current_game_state_frame_count % 300 == 0;
     }
 
+    private Boolean AlienLandingGameOverCondition()
+    {
+        ArrayList<Alien> bottom_aliens = GetBottomAliens(); // All the aliens at the bottom of their columns.
+        for (Alien bottom_alien : bottom_aliens)
+        {
+            if (bottom_alien.y + bottom_alien.height >= alien_landing_height)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 
 }

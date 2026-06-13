@@ -11,7 +11,8 @@
 #include "control/control.h"
 
 
-#define MAX_SPRITE_ID 29
+// #define MAX_SPRITE_ID 29
+#define MAX_SPRITE_ID 30
 #define MAX_FRAME_ENTITIES 256
 #define GAME_SCALE 2.0f
 
@@ -68,6 +69,7 @@ static const char *spriteFiles[MAX_SPRITE_ID] = {
     "assets/sprites/explotions/player_explotion_1.PNG",
     "assets/sprites/explotions/alien_bullet_explotion.PNG",
     "assets/sprites/explotions/alien_explotion.PNG",
+    "assets/sprites/aliens_sprites/ufo_isolated.PNG",
 };
 
 #define MAX_DEATH_EFFECTS 64

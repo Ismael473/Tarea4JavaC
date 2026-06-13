@@ -12,5 +12,12 @@ public class AliensConcreteFactory extends AliensAbstractFactory
     public Squid CreateSquid() {return new Squid(5, death_animation);}
 
     @Override
-    public UFO CreateUFO() {return new UFO(29, death_animation);}
+    // Contrary to other Alien entities, UFO spawns dead and its move_distance is 1 instead of 2.
+    public UFO CreateUFO()
+    {
+        UFO new_ufo = new UFO(29, death_animation);
+        new_ufo.move_distance = 1;
+        new_ufo.dead = true;
+        return new_ufo;
+    }
 }
