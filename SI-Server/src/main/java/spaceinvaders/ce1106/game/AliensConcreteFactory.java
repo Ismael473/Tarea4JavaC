@@ -10,4 +10,7 @@ public class AliensConcreteFactory extends AliensAbstractFactory
     public Octopus CreateOctopus() {return new Octopus(3, death_animation);}
     @Override
     public Squid CreateSquid() {return new Squid(5, death_animation);}
+
+    @Override
+    public UFO CreateUFO() {return new UFO(29, death_animation);}
 }
