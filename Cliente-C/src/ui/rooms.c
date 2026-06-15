@@ -32,6 +32,12 @@ void InitRooms() {
 void UpdateRooms() {
     UpdateStars();
 
+    if (IsKeyPressed(KEY_ESCAPE) && !joiningRoom) {
+        InitMenu();
+        App.currentScreen = MENU_SCREEN;
+        return;
+    }
+
     if (fetchingRooms) {
         cJSON *json = cJSON_CreateObject();
         cJSON_AddStringToObject(json, "type", "list_rooms");

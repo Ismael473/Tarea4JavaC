@@ -2,6 +2,7 @@
 #include "ui/stars.h"
 #include "ui/states.h"
 #include "ui/menu.h"
+#include "ui/button.h"
 #include "ui/text.h"
 #include "network/connection.h"
 #include "cJSON.h"
@@ -94,6 +95,18 @@ static void DrawSprite(Texture2D tex, int gameX, int gameY) {
     DrawTextureEx(tex, pos, 0, GAME_SCALE, WHITE);
 }
 
+void DettachSpectator() {
+    cJSON *dettach = cJSON_CreateObject();
+    cJSON_AddStringToObject(dettach, "type", "leave_room");
+    cJSON_AddStringToObject(dettach, "clientId", App.client.uuid);
+    char *inputStr = cJSON_PrintUnformatted(dettach);
+    cJSON_Delete(dettach);
+    if (inputStr) {
+        ConnectionSend(inputStr);
+        cJSON_free(inputStr);
+    }
+}
+
 void InitSpectate() {
     GAME_OFFSET_X = (GetScreenWidth() - (int)(256 * GAME_SCALE)) / 2 + 40;
     GAME_OFFSET_Y = (GetScreenHeight() - (int)(256 * GAME_SCALE)) / 2;
@@ -113,6 +126,12 @@ void InitSpectate() {
 
 void UpdateSpectate() {
     UpdateStars();
+
+    if (IsKeyPressed(KEY_ESCAPE)) {
+        App.currentScreen = MENU_SCREEN;
+        InitMenu();
+        return;
+    }
 
     const char *frame = ConnectionGetLatestFrame();
     if (!frame || frame[0] == '\0') return;
@@ -347,5 +366,21 @@ void DrawSpectate() {
             .opacity = 1.0f
         };
         DrawUIText(menuText);
+    }
+
+    Button exitButton = {
+        .bounds = {10, GetScreenHeight() - 50, 100, 40},
+        .text = "Salir",
+        .fontSize = 15,
+        .spacing = 2,
+        .textColor = WHITE,
+        .standbyColor = RED,
+        .hoverColor = DARKGRAY
+    };
+
+    if (DrawButton(exitButton)) {
+        App.currentScreen = MENU_SCREEN;
+        DettachSpectator();
+        InitMenu();
     }
 }
